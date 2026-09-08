@@ -237,8 +237,29 @@ function resizeGalleryImage(file,maxSize=1200,quality=.82){
 }
 
 function renderServiceAdmin(){$("#serviceList").innerHTML=S.services.map(x=>`<div class="adminrow"><div><b>${esc(x.name)}</b><br>${x.duration} min · ${x.price===0?"Free":"£"+x.price}${x.deposit?` · £${x.deposit} deposit`:""}</div><button onclick="serviceForm('${x.id}')">Edit</button></div>`).join("")} function serviceForm(id=""){let x=S.services.find(s=>s.id===id);modal(`<h2>${x?"Edit":"Add"} service</h2><div class="form"><select id="scat">${CATEGORY_ORDER.map(c=>`<option value="${c}" ${x?.category===c?"selected":""}>${c}</option>`).join("")}</select><input id="sn" placeholder="Name" value="${esc(x?.name||"")}"><input id="sd" type="number" value="${x?.duration||60}"><input id="sp" type="number" value="${x?.price??30}"><input id="sdep" type="number" value="${x?.deposit??10}"><textarea id="snote" placeholder="Service information">${esc(x?.note||"")}</textarea><button class="primary" onclick="serviceSave('${id}')">Save</button></div>`)} function serviceSave(id){let o={category:$("#scat").value,name:$("#sn").value,duration:+$("#sd").value,price:+$("#sp").value,deposit:+$("#sdep").value,note:$("#snote").value};if(id)Object.assign(S.services.find(x=>x.id===id),o);else S.services.push({id:uid(),...o});save();closeModal();render();adminRender()}
-const DAYS=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];function renderHours(){$("#hours").innerHTML=DAYS.map((x,i)=>`<div class="hoursrow"><b>${x}</b><select id="ho${i}"><option value="1">Open</option><option value="0">Closed</option></select><input id="hs${i}" type="time" value="${S.hours[i].start}"><input id="he${i}" type="time" value="${S.hours[i].end}"></div>`).join("");DAYS.forEach((x,i)=>$("#ho"+i).value=S.hours[i].open?"1":"0")} function saveHours(){DAYS.forEach((x,i)=>S.hours[i]={open:$("#ho"+i).value==="1",start:$("#hs"+i).value,end:$("#he"+i).value});save();toast("Hours saved")}
-function blockForm(){modal(`<h2>Block time</h2><div class="form"><input id="bd" type="date" value="${today()}"><input id="bs" type="time" value="12:00"><input id="be2" type="time" value="13:00"><input id="br" placeholder="Reason"><button class="primary" onclick="blockSave()">Block</button></div>`)} function blockSave(){S.blocks.push({id:uid(),date:$("#bd").value,start:$("#bs").value,end:$("#be2").value,reason:$("#br").value||"Unavailable"});save();closeModal();adminRender()} function renderBlocks(){$("#blocks").innerHTML=S.blocks.map(b=>`<div class="adminrow"><div><b>${esc(b.reason)}</b><br>${nice(b.date)} · ${b.start}–${b.end}</div><button onclick="blockDelete('${b.id}')">Remove</button></div>`).join("")||"No blocked time."} function blockDelete(id){S.blocks=S.blocks.filter(x=>x.id!==id);save();adminRender()}
+const DAYS=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];function renderHours(){$("#hours").innerHTML=DAYS.map((x,i)=>`<div class="hoursrow"><b>${x}</b><select id="ho${i}"><option value="1">Open</option><option value="0">Closed</option></select><input id="hs${i}" type="time" value="${S.hours[i].start}"><input id="he${i}" type="time" value="${S.hours[i].end}"></div>`).join("");DAYS.forEach((x,i)=>$("#ho"+i).value=S.hours[i].open?"1":"0")} async function saveHours(){
+  DAYS.forEach((x,i)=>{
+    S.hours[i]={
+      open:$("#ho"+i).value==="1",
+      start:$("#hs"+i).value,
+      end:$("#he"+i).value
+    };
+  });
+
+  save();
+
+  try{
+    if(window.CloudDB?.enabled()){
+      await CloudDB.saveAvailability(S.hours);
+    }
+    toast("Working hours saved");
+  }catch(e){
+    console.error(e);
+    toast("Could not save hours online");
+  }
+
+  adminRender();
+}()} function renderBlocks(){$("#blocks").innerHTML=S.blocks.map(b=>`<div class="adminrow"><div><b>${esc(b.reason)}</b><br>${nice(b.date)} · ${b.start}–${b.end}</div><button onclick="blockDelete('${b.id}')">Remove</button></div>`).join("")||"No blocked time."} function blockDelete(id){S.blocks=S.blocks.filter(x=>x.id!==id);save();adminRender()}
 function saveSettings(){S.settings.name=$("#businessName").value||"Hair Studio";S.settings.tag=$("#tagline").value;S.settings.pin=$("#adminPin").value||"1234";save();render();toast("Settings saved")}
 render();home();
 
