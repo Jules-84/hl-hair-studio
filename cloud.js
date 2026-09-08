@@ -20,9 +20,9 @@
       appointment_time:b.time,duration:b.duration,price:b.price,base_price:b.basePrice,
       deposit:b.deposit,pin_curls:!!b.pinCurls,status:b.status||"confirmed"
     };
-    const {data,error}=await client.from("bookings").insert(payload).select().single();
-    if(error)throw error;
-    return {booking:mapBooking(data)};
+    const {error}=await client.from("bookings").insert(payload);
+if(error)throw error;
+return {booking:b};
   }
 
   async function busySlots(date){
