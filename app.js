@@ -376,9 +376,12 @@ function renderBlocks(){
 }
 
 async function blockDelete(id){
+  const block=S.blocks.find(x=>x.id===id);
+  if(!block)return toast("Blocked time not found");
+
   try{
     if(window.CloudDB?.enabled()){
-      await CloudDB.deleteBlockedTime(id);
+      await CloudDB.deleteBlockedTime(block);
       if(typeof CloudDB.fetchBlockedTimes==="function"){
         const rows=await CloudDB.fetchBlockedTimes();
         S.blocks=Array.isArray(rows)?rows.map(normaliseCloudBlock):S.blocks.filter(x=>x.id!==id);
