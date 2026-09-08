@@ -48,7 +48,8 @@ function bookingStart(){
   home();
   const h=$("#home");if(h)h.scrollIntoView({behavior:"smooth",block:"start"});
 }
-function startService(id){
+async function startService(id){
+  await syncCloudAvailability(false);
   hideCustomer();
   $("#booking").classList.remove("hide");
   W={step:1,category:null,pinCurls:false};
@@ -85,7 +86,7 @@ function bookRender(){
 function pickCategory(cat){W.category=cat;W.step=2;bookRender()}
 function pinCurlStep(){let x=W.service;$("#bookbody").innerHTML=`<div class="bookcard addon-step"><span class="eyebrow-small">${esc(x.name)}</span><h2>Would you like to add pin curls?</h2><p class="category-help">Choose an option before selecting your appointment date.</p><div class="pin-options"><button class="pin-option" onclick="choosePinCurls(false)"><div><b>No thanks</b><small>Continue with ${esc(x.name)}</small></div><strong>Ã‚Â£${x.price}</strong></button><button class="pin-option featured-addon" onclick="choosePinCurls(true)"><div><b>Add Pin Curls</b><small>Add pin curls to your blow dry</small></div><strong>+Ã‚Â£2</strong></button></div></div>`}
 function choosePinCurls(v){W.pinCurls=!!v;W.step=4;bookRender()}
-function pickService(id){W.service=S.services.find(x=>x.id===id);W.category=W.service.category;W.pinCurls=false;W.step=supportsPinCurls(W.service)?3:4;bookRender()} function dateStep(){let out=[],d=new Date();for(let i=0;i<42;i++){let x=new Date(d);x.setDate(d.getDate()+i);if(!S.hours[x.getDay()].open)continue;let iso=x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0");out.push(`<button class="choice" onclick="pickDate('${iso}')">${x.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})}</button>`)}$("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a date</h2><p>${esc(W.service.name)}</p><div class="dates">${out.join("")}</div></div>`} async function pickDate(d){W.date=d;W.cloudBusy=[];if(window.CloudDB?.enabled()){try{W.cloudBusy=await CloudDB.busySlots(d)}catch(e){console.error(e);return toast("Could not check online availability")}}W.step=5;bookRender()}
+function pickService(id){W.service=S.services.find(x=>x.id===id);W.category=W.service.category;W.pinCurls=false;W.step=supportsPinCurls(W.service)?3:4;bookRender()} function dateStep(){let out=[],d=new Date();for(let i=0;i<42;i++){let x=new Date(d);x.setDate(d.getDate()+i);if(!S.hours[x.getDay()].open)continue;let iso=x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0");out.push(`<button class="choice" onclick="pickDate('${iso}')">${x.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})}</button>`)}$("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a date</h2><p>${esc(W.service.name)}</p><div class="dates">${out.join("")}</div></div>`} async function pickDate(d){W.date=d;W.cloudBusy=[];if(window.CloudDB?.enabled()){try{await syncCloudAvailability(false);W.cloudBusy=await CloudDB.busySlots(d)}catch(e){console.error(e);return toast("Could not check online availability")}}W.step=5;bookRender()}
 function overlap(t,d,b,bd){return mins(t)<mins(b)+bd&&mins(b)<mins(t)+d} function slots(){let h=S.hours[new Date(W.date+"T12:00").getDay()],o=[];for(let m=mins(h.start);m+W.service.duration<=mins(h.end);m+=30){let t=ts(m),busy=S.bookings.some(b=>b.status!=="cancelled"&&b.date===W.date&&overlap(t,W.service.duration,b.time,b.duration)),cloud=(W.cloudBusy||[]).some(b=>overlap(t,W.service.duration,b.time,b.duration)),block=S.blocks.some(b=>b.date===W.date&&overlap(t,W.service.duration,b.start,mins(b.end)-mins(b.start)));if(!busy&&!cloud&&!block)o.push(t)}return o} function timeStep(){$("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a time</h2><p>${nice(W.date)}</p><div class="times">${slots().map(t=>`<button class="choice" onclick="pickTime('${t}')">${t}</button>`).join("")||"No times available"}</div></div>`} function pickTime(t){W.time=t;W.step=6;bookRender()}
 function details(){
  let x=W.service,total=x.price+(W.pinCurls?2:0),dep=depositFor(x),remaining=Math.max(0,total-dep);
@@ -99,10 +100,70 @@ function details(){
 async function confirmBook(){let n=$("#bn").value.trim(),p=$("#bp").value.trim();if(!n||!p)return toast("Add your name and mobile");let x=W.service,booking={id:uid(),name:n,phone:p,email:$("#be").value,notes:$("#bnotes").value,serviceId:x.id,serviceName:x.name,date:W.date,time:W.time,duration:x.duration,price:x.price+(W.pinCurls?2:0),basePrice:x.price,deposit:depositFor(x),pinCurls:!!W.pinCurls,status:"confirmed"};let btn=$("#bookbody .primary.full");if(btn){btn.disabled=true;btn.textContent="Saving bookingÃ¢â‚¬Â¦"}try{if(window.CloudDB?.enabled()){let r=await CloudDB.createBooking(booking);if(r?.booking)booking=r.booking}}catch(e){console.error(e);if(btn){btn.disabled=false;btn.textContent="Request booking"}return toast((e?.message||"").includes("appointment time")?"That time has just been taken. Please choose another time.":"Could not save booking online. Please try again.")}S.bookings.push(booking);save();$("#bookbody").innerHTML=`<div class="bookcard" style="text-align:center"><h2>Ã¢Å“â€œ You're booked</h2><p>${nice(W.date)} at ${W.time}${W.pinCurls?"<br>Pin Curls +Ã‚Â£2":""}</p>${depositFor(x)?`<div class="deposit-confirm"><b>Ã‚Â£${depositFor(x)} deposit required</b><br><span>Your payment details will be sent to you separately to secure the appointment.</span></div>`:""}<p class="confirm-address">Cobella &amp; Co<br>215 London Road, Hazel Grove, Stockport, SK7 4HS</p><button class="primary" onclick="home()">Done</button></div>`;if(authed)adminRender()}
 function lookup(){let p=$("#lookup").value.replace(/\D/g,"");let a=S.bookings.filter(b=>b.phone.replace(/\D/g,"")===p&&b.status!=="cancelled");$("#mineList").innerHTML=a.length?a.map(b=>`<div class="bookingrow"><div><b>${esc(b.serviceName)}</b><br>${nice(b.date)} at ${b.time}${b.pinCurls?" Ã‚Â· Pin Curls +Ã‚Â£2":""}</div><button onclick="cancel('${b.id}')">Cancel</button></div>`).join(""):"<div class='card'>No bookings found.</div>"} function cancel(id){let b=S.bookings.find(x=>x.id===id);if(b&&confirm("Cancel this booking?")){b.status="cancelled";save();lookup();adminRender()}}
 async function syncAdminBookings(){if(!window.CloudDB?.enabled())return;try{let rows=await CloudDB.fetchBookings();if(Array.isArray(rows)){S.bookings=rows;save()}}catch(e){console.error(e);toast("Could not refresh online bookings")}}
+function cloudHoursToLocal(row){
+  if(!row)return null;
+  const names=["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
+  let out={},found=false;
+  names.forEach((name,i)=>{
+    const ok=name+"_open",sk=name+"_start",ek=name+"_end";
+    if(Object.prototype.hasOwnProperty.call(row,ok)){
+      found=true;
+      out[i]={
+        open:!!row[ok],
+        start:String(row[sk]||S.hours[i]?.start||"09:00").slice(0,5),
+        end:String(row[ek]||S.hours[i]?.end||"17:00").slice(0,5)
+      };
+    }
+  });
+  return found?out:null;
+}
+function normaliseCloudBlock(b){
+  return {
+    id:b.id,
+    date:b.date||b.block_date,
+    start:String(b.start||b.start_time||"").slice(0,5),
+    end:String(b.end||b.end_time||"").slice(0,5),
+    reason:b.reason||b.note||"Unavailable"
+  };
+}
+async function syncCloudAvailability(showError=false){
+  if(!window.CloudDB?.enabled())return;
+  let gotBlocks=false;
+
+  try{
+    if(typeof CloudDB.fetchAvailability==="function"){
+      const data=await CloudDB.fetchAvailability();
+      const mapped=cloudHoursToLocal(data?.hours);
+      if(mapped)S.hours=mapped;
+      if(Array.isArray(data?.blocks)){
+        S.blocks=data.blocks.map(normaliseCloudBlock);
+        gotBlocks=true;
+      }
+    }
+  }catch(e){
+    console.error("Availability sync failed:",e);
+  }
+
+  try{
+    if(typeof CloudDB.fetchBlockedTimes==="function"){
+      const rows=await CloudDB.fetchBlockedTimes();
+      if(Array.isArray(rows)){
+        S.blocks=rows.map(normaliseCloudBlock);
+        gotBlocks=true;
+      }
+    }
+  }catch(e){
+    console.error("Blocked-time sync failed:",e);
+    if(showError)toast("Could not refresh blocked times");
+  }
+
+  if(gotBlocks)save();
+}
+
 function adminOpen(){$("#customer").classList.add("hide");$("header").classList.add("hide");$("#admin").classList.remove("hide")}
 function adminClose(){$("#admin").classList.add("hide");$("#customer").classList.remove("hide");$("header").classList.remove("hide");home()}
-async function login(){let pin=$("#pin").value;if(window.CloudDB?.enabled()){try{await CloudDB.adminLogin(pin)}catch(e){console.error(e);return toast("Incorrect admin PIN")}}else if(pin!==S.settings.pin){return toast("Incorrect PIN")}authed=true;$("#login").classList.add("hide");$("#dash").classList.remove("hide");await syncAdminBookings();adminRender()}
-async function tab(id){$$(".tab").forEach(x=>x.classList.add("hide"));$("#"+id).classList.remove("hide");await syncAdminBookings();adminRender()}
+async function login(){let pin=$("#pin").value;if(window.CloudDB?.enabled()){try{await CloudDB.adminLogin(pin)}catch(e){console.error(e);return toast("Incorrect admin PIN")}}else if(pin!==S.settings.pin){return toast("Incorrect PIN")}authed=true;$("#login").classList.add("hide");$("#dash").classList.remove("hide");await syncAdminBookings();await syncCloudAvailability(true);adminRender()}
+async function tab(id){$$(".tab").forEach(x=>x.classList.add("hide"));$("#"+id).classList.remove("hide");await syncAdminBookings();await syncCloudAvailability(false);adminRender()}
 function adminRender(){if(!authed)return;let active=S.bookings.filter(b=>b.status!=="cancelled"),d=today();$("#todayCount").textContent=active.filter(b=>b.date===d).length;$("#upcomingCount").textContent=active.filter(b=>b.date>=d).length;$("#revenue").textContent="Ã‚Â£"+active.filter(b=>b.date>=d).reduce((a,b)=>a+b.price,0);if(!$("#diaryDate").value)$("#diaryDate").value=d;renderDiary();renderCustomers();renderServiceAdmin();renderGalleryAdmin();renderHours();renderBlocks();$("#businessName").value=S.settings.name;$("#tagline").value=S.settings.tag;$("#adminPin").value=S.settings.pin}
 function diaryIso(d){
  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
@@ -289,9 +350,17 @@ async function blockSave(){
       const saved=await CloudDB.addBlockedTime(block);
       if(saved?.id)block.id=saved.id;
       else if(saved?.block?.id)block.id=saved.block.id;
+
+      if(typeof CloudDB.fetchBlockedTimes==="function"){
+        const rows=await CloudDB.fetchBlockedTimes();
+        S.blocks=Array.isArray(rows)?rows.map(normaliseCloudBlock):[block];
+      }else{
+        S.blocks.push(block);
+      }
+    }else{
+      S.blocks.push(block);
     }
 
-    S.blocks.push(block);
     save();
     closeModal();
     adminRender();
@@ -307,15 +376,19 @@ function renderBlocks(){
 }
 
 async function blockDelete(id){
-  const block=S.blocks.find(x=>x.id===id);
-  if(!block)return toast("Blocked time not found");
-
   try{
     if(window.CloudDB?.enabled()){
-      await CloudDB.deleteBlockedTime(block);
+      await CloudDB.deleteBlockedTime(id);
+      if(typeof CloudDB.fetchBlockedTimes==="function"){
+        const rows=await CloudDB.fetchBlockedTimes();
+        S.blocks=Array.isArray(rows)?rows.map(normaliseCloudBlock):S.blocks.filter(x=>x.id!==id);
+      }else{
+        S.blocks=S.blocks.filter(x=>x.id!==id);
+      }
+    }else{
+      S.blocks=S.blocks.filter(x=>x.id!==id);
     }
 
-    S.blocks=S.blocks.filter(x=>x.id!==id);
     save();
     adminRender();
     toast("Blocked time removed");
@@ -326,4 +399,4 @@ async function blockDelete(id){
 }
 
 function saveSettings(){S.settings.name=$("#businessName").value||"Hair Studio";S.settings.tag=$("#tagline").value;S.settings.pin=$("#adminPin").value||"1234";save();render();toast("Settings saved")}
-render();home();
+render();home();syncCloudAvailability(false).then(()=>render()).catch(console.error);
