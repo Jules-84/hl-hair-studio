@@ -83,6 +83,17 @@
     return data;
   }
 
+  async function changeAdminPin(pin){
+    if(!client)return {localOnly:true};
+
+    const value=String(pin||"").trim();
+    if(!value)throw new Error("PIN cannot be empty");
+
+    const {data,error}=await client.auth.updateUser({password:value});
+    if(error)throw error;
+    return data;
+  }
+
   async function fetchBookings(){
     if(!client)return null;
 
@@ -221,6 +232,7 @@
     createAdminBooking:createBooking,
     busySlots,
     adminLogin,
+    changeAdminPin,
     fetchBookings,
     cancelBooking,
     fetchAvailability,
