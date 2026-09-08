@@ -53,7 +53,90 @@ return {booking:b};
     if(error)throw error;
     return true;
   }
+async function fetchAvailability(){
+  if(!client) return null;
 
+  const {data:hours,error:hoursError}=await client
+    .from("availability")
+    .select("*")
+    .eq("id",1)
+    .single();
+
+  if(hoursError) throw hoursError;
+
+  const {data:blocks,error:blocksError}=await client
+    .from("blocked_times")
+    .select("*")
+    .order("block_date",{ascending:true})
+    .order("start_time",{ascending:true});
+
+  if(blocksError) throw blocksError;
+
+  return {hours,blocks:blocks||[]};
+}
+
+async function saveAvailability(hours){
+  if(!client) return {localOnly:true};
+
+  const payload={
+    id:1,
+    sunday_open:hours[0].open,
+    sunday_start:hours[0].start,
+    sunday_end:hours[0].end,
+    monday_open:hours[1].open,
+    monday_start:hours[1].start,
+    monday_end:hours[1].end,
+    tuesday_open:hours[2].open,
+    tuesday_start:hours[2].start,
+    tuesday_end:hours[2].end,
+    wednesday_open:hours[3].open,
+    wednesday_start:hours[3].start,
+    wednesday_end:hours[3].end,
+    thursday_open:hours[4].open,
+    thursday_start:hours[4].start,
+    thursday_end:hours[4].end,
+    friday_open:hours[5].open,
+    friday_start:hours[5].start,
+    friday_end:hours[5].end,
+    saturday_open:hours[6].open,
+    saturday_start:hours[6].start,
+    saturday_end:hours[6].end
+  };
+
+  const {error}=await client
+    .from("availability")
+    .update(payload)
+    .eq("id",1);
+
+  if(error) throw error;
+  return true;
+}
+
+async function addBlockedTime(block){
+  if(!client) return {localOnly:true};
+
+  const {error}=await client.from("blocked_times").insert({
+    block_date:block.date,
+    start_time:block.start,
+    end_time:block.end,
+    note:block.note||null
+  });
+
+  if(error) throw error;
+  return true;
+}
+
+async function deleteBlockedTime(id){
+  if(!client) return {localOnly:true};
+
+  const {error}=await client
+    .from("blocked_times")
+    .delete()
+    .eq("id",id);
+
+  if(error) throw error;
+  return true;
+}
   window.CloudDB={
     enabled:()=>!!client,
     createBooking,
@@ -62,5 +145,9 @@ return {booking:b};
     adminLogin,
     fetchBookings,
     cancelBooking
+    fetchAvailability,
+saveAvailability,
+addBlockedTime,
+deleteBlockedTime,
   };
 })();
