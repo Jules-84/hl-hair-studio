@@ -21,7 +21,7 @@ function categoryMarkup(clickFn="startService"){
  return CATEGORY_ORDER.map(cat=>{
    let items=S.services.filter(s=>s.category===cat);
    if(!items.length)return "";
-   return `<section class="service-category"><div class="category-title"><h3>${esc(cat)}</h3><span>${items.length} service${items.length===1?"":"s"}</span></div><div class="category-items">${items.map(x=>`<div class="service" onclick="${clickFn}('${x.id}')"><div><b>${esc(x.name)}</b><small>${durationText(x.duration)}${x.note?` Â· ${esc(x.note)}`:""}</small></div><b>${x.price===0?"Free":"Â£"+x.price}</b></div>`).join("")}</div></section>`;
+   return `<section class="service-category"><div class="category-title"><h3>${esc(cat)}</h3><span>${items.length} service${items.length===1?"":"s"}</span></div><div class="category-items">${items.map(x=>`<div class="service" onclick="${clickFn}('${x.id}')"><div><b>${esc(x.name)}</b><small>${durationText(x.duration)}${x.note?` Ã‚Â· ${esc(x.note)}`:""}</small></div><b>${x.price===0?"Free":"Ã‚Â£"+x.price}</b></div>`).join("")}</div></section>`;
  }).join("");
 }
 
@@ -77,33 +77,33 @@ function bookRender(){
  let shown=(!blow&&W.step>=4)?W.step-1:W.step;
  $("#step").textContent=shown+" / "+total;$("#progress").style.width=(shown/total*100)+"%";
  if(W.step===1){bookingBack();return}
- if(false)$("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a category</h2><p class="category-help">What would you like to book?</p><div class="book-category-grid">${CATEGORY_ORDER.map(cat=>`<button class="book-category-card" onclick="pickCategory('${cat.replace(/'/g,"\\'")}')"><span>${esc(cat)}</span><b>â€º</b></button>`).join("")}</div></div>`;
+ if(false)$("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a category</h2><p class="category-help">What would you like to book?</p><div class="book-category-grid">${CATEGORY_ORDER.map(cat=>`<button class="book-category-card" onclick="pickCategory('${cat.replace(/'/g,"\\'")}')"><span>${esc(cat)}</span><b>Ã¢â‚¬Âº</b></button>`).join("")}</div></div>`;
  if(W.step===2){bookingBack();return}
- if(false){let items=S.services.filter(s=>s.category===W.category);$("#bookbody").innerHTML=`<div class="bookcard"><span class="eyebrow-small">${esc(W.category)}</span><h2>Choose a service</h2><div class="choices">${items.map(x=>`<button class="choice service-choice" onclick="pickService('${x.id}')"><span><b>${esc(x.name)}</b><small>${durationText(x.duration)}${x.note?` Â· ${esc(x.note)}`:""}${supportsPinCurls(x)?" Â· Pin curls +Â£2 optional":""}</small></span><strong>${x.price===0?"Free":"Â£"+x.price}</strong></button>`).join("")}</div></div>`}
+ if(false){let items=S.services.filter(s=>s.category===W.category);$("#bookbody").innerHTML=`<div class="bookcard"><span class="eyebrow-small">${esc(W.category)}</span><h2>Choose a service</h2><div class="choices">${items.map(x=>`<button class="choice service-choice" onclick="pickService('${x.id}')"><span><b>${esc(x.name)}</b><small>${durationText(x.duration)}${x.note?` Ã‚Â· ${esc(x.note)}`:""}${supportsPinCurls(x)?" Ã‚Â· Pin curls +Ã‚Â£2 optional":""}</small></span><strong>${x.price===0?"Free":"Ã‚Â£"+x.price}</strong></button>`).join("")}</div></div>`}
  if(W.step===3)pinCurlStep();if(W.step===4)dateStep();if(W.step===5)timeStep();if(W.step===6)details()
 }
 function pickCategory(cat){W.category=cat;W.step=2;bookRender()}
-function pinCurlStep(){let x=W.service;$("#bookbody").innerHTML=`<div class="bookcard addon-step"><span class="eyebrow-small">${esc(x.name)}</span><h2>Would you like to add pin curls?</h2><p class="category-help">Choose an option before selecting your appointment date.</p><div class="pin-options"><button class="pin-option" onclick="choosePinCurls(false)"><div><b>No thanks</b><small>Continue with ${esc(x.name)}</small></div><strong>Â£${x.price}</strong></button><button class="pin-option featured-addon" onclick="choosePinCurls(true)"><div><b>Add Pin Curls</b><small>Add pin curls to your blow dry</small></div><strong>+Â£2</strong></button></div></div>`}
+function pinCurlStep(){let x=W.service;$("#bookbody").innerHTML=`<div class="bookcard addon-step"><span class="eyebrow-small">${esc(x.name)}</span><h2>Would you like to add pin curls?</h2><p class="category-help">Choose an option before selecting your appointment date.</p><div class="pin-options"><button class="pin-option" onclick="choosePinCurls(false)"><div><b>No thanks</b><small>Continue with ${esc(x.name)}</small></div><strong>Ã‚Â£${x.price}</strong></button><button class="pin-option featured-addon" onclick="choosePinCurls(true)"><div><b>Add Pin Curls</b><small>Add pin curls to your blow dry</small></div><strong>+Ã‚Â£2</strong></button></div></div>`}
 function choosePinCurls(v){W.pinCurls=!!v;W.step=4;bookRender()}
 function pickService(id){W.service=S.services.find(x=>x.id===id);W.category=W.service.category;W.pinCurls=false;W.step=supportsPinCurls(W.service)?3:4;bookRender()} function dateStep(){let out=[],d=new Date();for(let i=0;i<42;i++){let x=new Date(d);x.setDate(d.getDate()+i);if(!S.hours[x.getDay()].open)continue;let iso=x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0");out.push(`<button class="choice" onclick="pickDate('${iso}')">${x.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})}</button>`)}$("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a date</h2><p>${esc(W.service.name)}</p><div class="dates">${out.join("")}</div></div>`} async function pickDate(d){W.date=d;W.cloudBusy=[];if(window.CloudDB?.enabled()){try{W.cloudBusy=await CloudDB.busySlots(d)}catch(e){console.error(e);return toast("Could not check online availability")}}W.step=5;bookRender()}
 function overlap(t,d,b,bd){return mins(t)<mins(b)+bd&&mins(b)<mins(t)+d} function slots(){let h=S.hours[new Date(W.date+"T12:00").getDay()],o=[];for(let m=mins(h.start);m+W.service.duration<=mins(h.end);m+=30){let t=ts(m),busy=S.bookings.some(b=>b.status!=="cancelled"&&b.date===W.date&&overlap(t,W.service.duration,b.time,b.duration)),cloud=(W.cloudBusy||[]).some(b=>overlap(t,W.service.duration,b.time,b.duration)),block=S.blocks.some(b=>b.date===W.date&&overlap(t,W.service.duration,b.start,mins(b.end)-mins(b.start)));if(!busy&&!cloud&&!block)o.push(t)}return o} function timeStep(){$("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a time</h2><p>${nice(W.date)}</p><div class="times">${slots().map(t=>`<button class="choice" onclick="pickTime('${t}')">${t}</button>`).join("")||"No times available"}</div></div>`} function pickTime(t){W.time=t;W.step=6;bookRender()}
 function details(){
  let x=W.service,total=x.price+(W.pinCurls?2:0),dep=depositFor(x),remaining=Math.max(0,total-dep);
  $("#bookbody").innerHTML=`<div class="bookcard"><h2>Your details</h2>
- <div class="form"><input id="bn" placeholder="Full name"><input id="bp" placeholder="Mobile number"><input id="be" placeholder="Email (optional)"><textarea id="bnotes" placeholder="Notes â€” you can mention a gallery style you like"></textarea></div>
- <div class="summary"><b>${esc(x.name)}</b><br>${nice(W.date)} at ${W.time}<br><small class="booking-location">Cobella &amp; Co Â· 215 London Road, Hazel Grove, Stockport Â· SK7 4HS</small><br>${x.price===0?"Free":"Â£"+x.price}${W.pinCurls?"<br><b>Pin Curls +Â£2</b>":""}</div>
- ${dep?`<div class="deposit-notice"><span class="deposit-badge">DEPOSIT REQUIRED</span><h3>Â£${dep} deposit</h3><p>A Â£${dep} deposit is required to secure this appointment. Payment details will be sent to you after your booking request.</p><small>Remaining balance after deposit: Â£${remaining}</small></div>`:`<div class="deposit-notice free-booking"><h3>No deposit required</h3><p>This is a free appointment/service.</p></div>`}
- <div class="booking-total"><span>Service total</span><b>${total===0?"Free":"Â£"+total}</b></div>
+ <div class="form"><input id="bn" placeholder="Full name"><input id="bp" placeholder="Mobile number"><input id="be" placeholder="Email (optional)"><textarea id="bnotes" placeholder="Notes Ã¢â‚¬â€ you can mention a gallery style you like"></textarea></div>
+ <div class="summary"><b>${esc(x.name)}</b><br>${nice(W.date)} at ${W.time}<br><small class="booking-location">Cobella &amp; Co Ã‚Â· 215 London Road, Hazel Grove, Stockport Ã‚Â· SK7 4HS</small><br>${x.price===0?"Free":"Ã‚Â£"+x.price}${W.pinCurls?"<br><b>Pin Curls +Ã‚Â£2</b>":""}</div>
+ ${dep?`<div class="deposit-notice"><span class="deposit-badge">DEPOSIT REQUIRED</span><h3>Ã‚Â£${dep} deposit</h3><p>A Ã‚Â£${dep} deposit is required to secure this appointment. Payment details will be sent to you after your booking request.</p><small>Remaining balance after deposit: Ã‚Â£${remaining}</small></div>`:`<div class="deposit-notice free-booking"><h3>No deposit required</h3><p>This is a free appointment/service.</p></div>`}
+ <div class="booking-total"><span>Service total</span><b>${total===0?"Free":"Ã‚Â£"+total}</b></div>
  <button class="primary full" onclick="confirmBook()">Request booking</button></div>`;
 }
-async function confirmBook(){let n=$("#bn").value.trim(),p=$("#bp").value.trim();if(!n||!p)return toast("Add your name and mobile");let x=W.service,booking={id:uid(),name:n,phone:p,email:$("#be").value,notes:$("#bnotes").value,serviceId:x.id,serviceName:x.name,date:W.date,time:W.time,duration:x.duration,price:x.price+(W.pinCurls?2:0),basePrice:x.price,deposit:depositFor(x),pinCurls:!!W.pinCurls,status:"confirmed"};let btn=$("#bookbody .primary.full");if(btn){btn.disabled=true;btn.textContent="Saving bookingâ€¦"}try{if(window.CloudDB?.enabled()){let r=await CloudDB.createBooking(booking);if(r?.booking)booking=r.booking}}catch(e){console.error(e);if(btn){btn.disabled=false;btn.textContent="Request booking"}return toast((e?.message||"").includes("appointment time")?"That time has just been taken. Please choose another time.":"Could not save booking online. Please try again.")}S.bookings.push(booking);save();$("#bookbody").innerHTML=`<div class="bookcard" style="text-align:center"><h2>âœ“ You're booked</h2><p>${nice(W.date)} at ${W.time}${W.pinCurls?"<br>Pin Curls +Â£2":""}</p>${depositFor(x)?`<div class="deposit-confirm"><b>Â£${depositFor(x)} deposit required</b><br><span>Your payment details will be sent to you separately to secure the appointment.</span></div>`:""}<p class="confirm-address">Cobella &amp; Co<br>215 London Road, Hazel Grove, Stockport, SK7 4HS</p><button class="primary" onclick="home()">Done</button></div>`;if(authed)adminRender()}
-function lookup(){let p=$("#lookup").value.replace(/\D/g,"");let a=S.bookings.filter(b=>b.phone.replace(/\D/g,"")===p&&b.status!=="cancelled");$("#mineList").innerHTML=a.length?a.map(b=>`<div class="bookingrow"><div><b>${esc(b.serviceName)}</b><br>${nice(b.date)} at ${b.time}${b.pinCurls?" Â· Pin Curls +Â£2":""}</div><button onclick="cancel('${b.id}')">Cancel</button></div>`).join(""):"<div class='card'>No bookings found.</div>"} function cancel(id){let b=S.bookings.find(x=>x.id===id);if(b&&confirm("Cancel this booking?")){b.status="cancelled";save();lookup();adminRender()}}
+async function confirmBook(){let n=$("#bn").value.trim(),p=$("#bp").value.trim();if(!n||!p)return toast("Add your name and mobile");let x=W.service,booking={id:uid(),name:n,phone:p,email:$("#be").value,notes:$("#bnotes").value,serviceId:x.id,serviceName:x.name,date:W.date,time:W.time,duration:x.duration,price:x.price+(W.pinCurls?2:0),basePrice:x.price,deposit:depositFor(x),pinCurls:!!W.pinCurls,status:"confirmed"};let btn=$("#bookbody .primary.full");if(btn){btn.disabled=true;btn.textContent="Saving bookingÃ¢â‚¬Â¦"}try{if(window.CloudDB?.enabled()){let r=await CloudDB.createBooking(booking);if(r?.booking)booking=r.booking}}catch(e){console.error(e);if(btn){btn.disabled=false;btn.textContent="Request booking"}return toast((e?.message||"").includes("appointment time")?"That time has just been taken. Please choose another time.":"Could not save booking online. Please try again.")}S.bookings.push(booking);save();$("#bookbody").innerHTML=`<div class="bookcard" style="text-align:center"><h2>Ã¢Å“â€œ You're booked</h2><p>${nice(W.date)} at ${W.time}${W.pinCurls?"<br>Pin Curls +Ã‚Â£2":""}</p>${depositFor(x)?`<div class="deposit-confirm"><b>Ã‚Â£${depositFor(x)} deposit required</b><br><span>Your payment details will be sent to you separately to secure the appointment.</span></div>`:""}<p class="confirm-address">Cobella &amp; Co<br>215 London Road, Hazel Grove, Stockport, SK7 4HS</p><button class="primary" onclick="home()">Done</button></div>`;if(authed)adminRender()}
+function lookup(){let p=$("#lookup").value.replace(/\D/g,"");let a=S.bookings.filter(b=>b.phone.replace(/\D/g,"")===p&&b.status!=="cancelled");$("#mineList").innerHTML=a.length?a.map(b=>`<div class="bookingrow"><div><b>${esc(b.serviceName)}</b><br>${nice(b.date)} at ${b.time}${b.pinCurls?" Ã‚Â· Pin Curls +Ã‚Â£2":""}</div><button onclick="cancel('${b.id}')">Cancel</button></div>`).join(""):"<div class='card'>No bookings found.</div>"} function cancel(id){let b=S.bookings.find(x=>x.id===id);if(b&&confirm("Cancel this booking?")){b.status="cancelled";save();lookup();adminRender()}}
 async function syncAdminBookings(){if(!window.CloudDB?.enabled())return;try{let rows=await CloudDB.fetchBookings();if(Array.isArray(rows)){S.bookings=rows;save()}}catch(e){console.error(e);toast("Could not refresh online bookings")}}
 function adminOpen(){$("#customer").classList.add("hide");$("header").classList.add("hide");$("#admin").classList.remove("hide")}
 function adminClose(){$("#admin").classList.add("hide");$("#customer").classList.remove("hide");$("header").classList.remove("hide");home()}
 async function login(){let pin=$("#pin").value;if(window.CloudDB?.enabled()){try{await CloudDB.adminLogin(pin)}catch(e){console.error(e);return toast("Incorrect admin PIN")}}else if(pin!==S.settings.pin){return toast("Incorrect PIN")}authed=true;$("#login").classList.add("hide");$("#dash").classList.remove("hide");await syncAdminBookings();adminRender()}
 async function tab(id){$$(".tab").forEach(x=>x.classList.add("hide"));$("#"+id).classList.remove("hide");await syncAdminBookings();adminRender()}
-function adminRender(){if(!authed)return;let active=S.bookings.filter(b=>b.status!=="cancelled"),d=today();$("#todayCount").textContent=active.filter(b=>b.date===d).length;$("#upcomingCount").textContent=active.filter(b=>b.date>=d).length;$("#revenue").textContent="Â£"+active.filter(b=>b.date>=d).reduce((a,b)=>a+b.price,0);if(!$("#diaryDate").value)$("#diaryDate").value=d;renderDiary();renderCustomers();renderServiceAdmin();renderGalleryAdmin();renderHours();renderBlocks();$("#businessName").value=S.settings.name;$("#tagline").value=S.settings.tag;$("#adminPin").value=S.settings.pin}
+function adminRender(){if(!authed)return;let active=S.bookings.filter(b=>b.status!=="cancelled"),d=today();$("#todayCount").textContent=active.filter(b=>b.date===d).length;$("#upcomingCount").textContent=active.filter(b=>b.date>=d).length;$("#revenue").textContent="Ã‚Â£"+active.filter(b=>b.date>=d).reduce((a,b)=>a+b.price,0);if(!$("#diaryDate").value)$("#diaryDate").value=d;renderDiary();renderCustomers();renderServiceAdmin();renderGalleryAdmin();renderHours();renderBlocks();$("#businessName").value=S.settings.name;$("#tagline").value=S.settings.tag;$("#adminPin").value=S.settings.pin}
 function diaryIso(d){
  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 }
@@ -133,9 +133,9 @@ function renderDiary(){
    const eh=Math.floor(e/60),em=e%60, colWidth=280, gap=10;
    const left=8+item.col*(colWidth+gap);
    return `<button class="diary-appt diary-tone-${i%4}" style="top:${Math.max(0,(s-start)*ppm)}px;height:${Math.max(58,d*ppm)}px;left:${left}px;width:${colWidth}px" onclick="openDiaryBooking('${x.id}')">
-      <b>${x.time} â€“ ${eh}:${String(em).padStart(2,"0")} ${esc(x.name)}</b>
+      <b>${x.time} Ã¢â‚¬â€œ ${eh}:${String(em).padStart(2,"0")} ${esc(x.name)}</b>
       <span>${esc(x.serviceName||x.service||"Appointment")}${x.pinCurls?"<br>+ Pin Curls":""}</span>
-      <small>${x.deposit?`Â£${x.deposit} deposit required`:"No deposit"}</small>
+      <small>${x.deposit?`Ã‚Â£${x.deposit} deposit required`:"No deposit"}</small>
    </button>`;
  }).join("");
 
@@ -143,11 +143,11 @@ function renderDiary(){
 
  el.innerHTML=`<div class="visual-diary">
    <div class="diary-toolbar">
-     <button onclick="diaryMove(-1)">â€¹</button>
+     <button onclick="diaryMove(-1)">Ã¢â‚¬Â¹</button>
      <div><small>APPOINTMENTS</small><h3>${nice(date)}</h3></div>
-     <button onclick="diaryMove(1)">â€º</button>
+     <button onclick="diaryMove(1)">Ã¢â‚¬Âº</button>
    </div>
-   <div class="diary-actions"><button class="today-btn" onclick="diaryToday()">Today</button><span>Swipe / scroll sideways to view the diary â†’</span></div>
+   <div class="diary-actions"><button class="today-btn" onclick="diaryToday()">Today</button><span>Swipe / scroll sideways to view the diary Ã¢â€ â€™</span></div>
    <div class="diary-scroll">
      <div class="timeline-wrap" style="height:${height}px;min-width:${laneWidth+78}px">
        <div class="time-axis">${hours}</div>
@@ -166,7 +166,7 @@ function diaryMove(n){
 function diaryToday(){window.diaryDate=today();renderDiary()}
 function openDiaryBooking(id){
  let b=S.bookings.find(x=>x.id===id);if(!b)return;
- modal(`<h2>${esc(b.name)}</h2><div class="summary"><b>${esc(b.serviceName||b.service||"Appointment")}</b>${b.pinCurls?"<br>+ Pin Curls":""}<br>${nice(b.date)} at ${b.time}<br>${esc(b.phone||"")}${b.email?`<br>${esc(b.email)}`:""}<br><br>${b.deposit?`Deposit required: Â£${b.deposit}`:"No deposit required"}${b.notes?`<br><br>Notes: ${esc(b.notes)}`:""}</div></div>`);
+ modal(`<h2>${esc(b.name)}</h2><div class="summary"><b>${esc(b.serviceName||b.service||"Appointment")}</b>${b.pinCurls?"<br>+ Pin Curls":""}<br>${nice(b.date)} at ${b.time}<br>${esc(b.phone||"")}${b.email?`<br>${esc(b.email)}`:""}<br><br>${b.deposit?`Deposit required: Ã‚Â£${b.deposit}`:"No deposit required"}${b.notes?`<br><br>Notes: ${esc(b.notes)}`:""}</div></div>`);
 }
 async function adminCancel(id){let b=S.bookings.find(x=>x.id===id);if(!b||!confirm("Cancel appointment?"))return;try{if(window.CloudDB?.enabled())await CloudDB.cancelBooking(id)}catch(e){console.error(e);return toast("Could not cancel online")}b.status="cancelled";save();adminRender()}
 function modal(html){$("#modalbody").innerHTML=html;$("#modal").classList.remove("hide")} function closeModal(){$("#modal").classList.add("hide")}
@@ -182,7 +182,7 @@ function renderGalleryAdmin(){
      <label>Photo name<input value="${esc(g.label)}" onchange="galleryRename('${g.id}',this.value)"></label>
    </div>
    <button class="danger-btn" onclick="galleryDelete('${g.id}')">Delete</button>
- </div>`).join(""):`<div class="empty-admin">No gallery photos yet. Use â€œAdd photoâ€ to upload one.</div>`;
+ </div>`).join(""):`<div class="empty-admin">No gallery photos yet. Use Ã¢â‚¬Å“Add photoÃ¢â‚¬Â to upload one.</div>`;
 }
 function galleryRename(id,name){
  let g=S.gallery.find(x=>x.id===id);if(!g)return;
@@ -212,7 +212,7 @@ function galleryAddSave(){
  resizeGalleryImage(file,1200,.82).then(src=>{
    const item={id:uid(),src,label:name};
    S.gallery.unshift(item);
-   try{save()}catch(e){S.gallery.shift();return toast("Storage is full â€” delete an uploaded photo first")}
+   try{save()}catch(e){S.gallery.shift();return toast("Storage is full Ã¢â‚¬â€ delete an uploaded photo first")}
    closeModal();render();renderGalleryAdmin();toast("Photo added");
  }).catch(()=>toast("Could not add that photo"));
 }
@@ -236,7 +236,7 @@ function resizeGalleryImage(file,maxSize=1200,quality=.82){
  });
 }
 
-function renderServiceAdmin(){$("#serviceList").innerHTML=S.services.map(x=>`<div class="adminrow"><div><b>${esc(x.name)}</b><br>${x.duration} min Â· ${x.price===0?"Free":"Â£"+x.price}${x.deposit?` Â· Â£${x.deposit} deposit`:""}</div><button onclick="serviceForm('${x.id}')">Edit</button></div>`).join("")} function serviceForm(id=""){let x=S.services.find(s=>s.id===id);modal(`<h2>${x?"Edit":"Add"} service</h2><div class="form"><select id="scat">${CATEGORY_ORDER.map(c=>`<option value="${c}" ${x?.category===c?"selected":""}>${c}</option>`).join("")}</select><input id="sn" placeholder="Name" value="${esc(x?.name||"")}"><input id="sd" type="number" value="${x?.duration||60}"><input id="sp" type="number" value="${x?.price??30}"><input id="sdep" type="number" value="${x?.deposit??10}"><textarea id="snote" placeholder="Service information">${esc(x?.note||"")}</textarea><button class="primary" onclick="serviceSave('${id}')">Save</button></div>`)} function serviceSave(id){let o={category:$("#scat").value,name:$("#sn").value,duration:+$("#sd").value,price:+$("#sp").value,deposit:+$("#sdep").value,note:$("#snote").value};if(id)Object.assign(S.services.find(x=>x.id===id),o);else S.services.push({id:uid(),...o});save();closeModal();render();adminRender()}
+function renderServiceAdmin(){$("#serviceList").innerHTML=S.services.map(x=>`<div class="adminrow"><div><b>${esc(x.name)}</b><br>${x.duration} min Ã‚Â· ${x.price===0?"Free":"Ã‚Â£"+x.price}${x.deposit?` Ã‚Â· Ã‚Â£${x.deposit} deposit`:""}</div><button onclick="serviceForm('${x.id}')">Edit</button></div>`).join("")} function serviceForm(id=""){let x=S.services.find(s=>s.id===id);modal(`<h2>${x?"Edit":"Add"} service</h2><div class="form"><select id="scat">${CATEGORY_ORDER.map(c=>`<option value="${c}" ${x?.category===c?"selected":""}>${c}</option>`).join("")}</select><input id="sn" placeholder="Name" value="${esc(x?.name||"")}"><input id="sd" type="number" value="${x?.duration||60}"><input id="sp" type="number" value="${x?.price??30}"><input id="sdep" type="number" value="${x?.deposit??10}"><textarea id="snote" placeholder="Service information">${esc(x?.note||"")}</textarea><button class="primary" onclick="serviceSave('${id}')">Save</button></div>`)} function serviceSave(id){let o={category:$("#scat").value,name:$("#sn").value,duration:+$("#sd").value,price:+$("#sp").value,deposit:+$("#sdep").value,note:$("#snote").value};if(id)Object.assign(S.services.find(x=>x.id===id),o);else S.services.push({id:uid(),...o});save();closeModal();render();adminRender()}
 const DAYS=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 function renderHours(){
   $("#hours").innerHTML=DAYS.map((x,i)=>`<div class="hoursrow"><b>${x}</b><select id="ho${i}"><option value="1">Open</option><option value="0">Closed</option></select><input id="hs${i}" type="time" value="${S.hours[i].start}"><input id="he${i}" type="time" value="${S.hours[i].end}"></div>`).join("");
@@ -303,13 +303,16 @@ async function blockSave(){
 }
 
 function renderBlocks(){
-  $("#blocks").innerHTML=S.blocks.map(b=>`<div class="adminrow"><div><b>${esc(b.reason)}</b><br>${nice(b.date)} Â· ${b.start}â€“${b.end}</div><button onclick="blockDelete('${b.id}')">Remove</button></div>`).join("")||"No blocked time.";
+  $("#blocks").innerHTML=S.blocks.map(b=>`<div class="adminrow"><div><b>${esc(b.reason)}</b><br>${nice(b.date)} Ã‚Â· ${b.start}Ã¢â‚¬â€œ${b.end}</div><button onclick="blockDelete('${b.id}')">Remove</button></div>`).join("")||"No blocked time.";
 }
 
 async function blockDelete(id){
+  const block=S.blocks.find(x=>x.id===id);
+  if(!block)return toast("Blocked time not found");
+
   try{
     if(window.CloudDB?.enabled()){
-      await CloudDB.deleteBlockedTime(id);
+      await CloudDB.deleteBlockedTime(block);
     }
 
     S.blocks=S.blocks.filter(x=>x.id!==id);
