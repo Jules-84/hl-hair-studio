@@ -170,6 +170,19 @@
     return true;
   }
 
+  async function fetchBlockedTimes(){
+    if(!client)return [];
+
+    const {data,error}=await client
+      .from("blocked_times")
+      .select("*")
+      .order("block_date",{ascending:true})
+      .order("start_time",{ascending:true});
+
+    if(error)throw error;
+    return (data||[]).map(mapBlock);
+  }
+
   async function addBlockedTime(block){
     if(!client)return {localOnly:true,...block};
 
@@ -189,43 +202,17 @@
     return mapBlock(data);
   }
 
-  async function deleteBlockedTime(blockOrId){
+  async function deleteBlockedTime(id){
     if(!client)return {localOnly:true};
 
-    const block=(blockOrId&&typeof blockOrId==="object")?blockOrId:null;
-    const id=block?block.id:blockOrId;
-    const isUuid=typeof id==="string" &&
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+    const {data,error}=await client
+      .from("blocked_times")
+      .delete()
+      .eq("id",id)
+      .select("id");
 
-    let deleted=[];
-
-    if(isUuid){
-      const {data,error}=await client
-        .from("blocked_times")
-        .delete()
-        .eq("id",id)
-        .select("id");
-
-      if(error)throw error;
-      deleted=data||[];
-    }
-
-    // Fallback for older blocks that were saved locally before the real
-    // Supabase UUID was returned to app.js.
-    if(!deleted.length && block?.date && block?.start && block?.end){
-      const {data,error}=await client
-        .from("blocked_times")
-        .delete()
-        .eq("block_date",block.date)
-        .eq("start_time",block.start)
-        .eq("end_time",block.end)
-        .select("id");
-
-      if(error)throw error;
-      deleted=data||[];
-    }
-
-    return {deleted:deleted.length};
+    if(error)throw error;
+    return {deleted:(data||[]).length};
   }
 
   window.CloudDB={
@@ -238,6 +225,7 @@
     cancelBooking,
     fetchAvailability,
     saveAvailability,
+    fetchBlockedTimes,
     addBlockedTime,
     deleteBlockedTime
   };
