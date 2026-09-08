@@ -1,0 +1,8 @@
+{
+  "name": "HL Hair Studio Booking",
+  "short_name": "HL Hair Studio",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f2ec",
+  "theme_color": "#171411"
+}
