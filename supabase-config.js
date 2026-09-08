@@ -1,5 +1,5 @@
 window.HL_CLOUD_CONFIG = {
-  url: "PASTE_YOUR_SUPABASE_PROJECT_URL_HERE",
-  anonKey: "PASTE_YOUR_SUPABASE_ANON_KEY_HERE",
-  adminEmail: "PASTE_YOUR_ADMIN_EMAIL_HERE"
+  url: "https://gryzyodojehnwlkdcthr.supabase.co/rest/v1/",
+  anonKey: "sb_publishable_3CGivJOPQAsH8iKse_5vyQ_dBBvmyW9",
+  adminEmail: "h.linklater@outlook.comE"
 };
