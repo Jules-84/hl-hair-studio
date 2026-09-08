@@ -1,1 +1,55 @@
-const C="hl-hair-studio-v25";const A=["./","./index.html","./styles.css","./app.js","./manifest.json","./assets/hair_up_01.jpeg","./assets/hair_up_02.jpeg","./assets/hair_up_03.jpeg","./assets/waves_01.jpg","./assets/curls_01.jpg","./assets/long_hair_01.jpg","./assets/blowdry_01.jpg","./assets/hair_up_04.jpg","./assets/hair_studio_logo.png"];self.addEventListener("install",e=>e.waitUntil(caches.open(C).then(c=>c.addAll(A))));self.addEventListener("fetch",e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));
+const CACHE="hl-hair-studio-v24-cloud-6";
+
+const STATIC=[
+  "./",
+  "./index.html",
+  "./styles.css",
+  "./manifest.json"
+];
+
+self.addEventListener("install",event=>{
+  event.waitUntil(
+    caches.open(CACHE).then(cache=>cache.addAll(STATIC)).then(()=>self.skipWaiting())
+  );
+});
+
+self.addEventListener("activate",event=>{
+  event.waitUntil(
+    caches.keys()
+      .then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))
+      .then(()=>self.clients.claim())
+  );
+});
+
+self.addEventListener("fetch",event=>{
+  const req=event.request;
+  if(req.method!=="GET")return;
+
+  const url=new URL(req.url);
+  if(url.origin!==self.location.origin)return;
+
+  // Always prefer the newest live code/config. This prevents old app.js/cloud.js
+  // from surviving after a GitHub update.
+  if(
+    url.pathname.endsWith("/app.js") ||
+    url.pathname.endsWith("/cloud.js") ||
+    url.pathname.endsWith("/supabase-config.js") ||
+    url.pathname.endsWith("/sw.js")
+  ){
+    event.respondWith(
+      fetch(req,{cache:"no-store"}).catch(()=>caches.match(req))
+    );
+    return;
+  }
+
+  // Network-first for the rest, with cache fallback for offline use.
+  event.respondWith(
+    fetch(req)
+      .then(res=>{
+        const copy=res.clone();
+        caches.open(CACHE).then(cache=>cache.put(req,copy));
+        return res;
+      })
+      .catch(()=>caches.match(req).then(cached=>cached||caches.match("./index.html")))
+  );
+});
