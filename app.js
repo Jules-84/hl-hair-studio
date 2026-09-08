@@ -162,7 +162,7 @@ async function syncCloudAvailability(showError=false){
 
 function adminOpen(){$("#customer").classList.add("hide");$("header").classList.add("hide");$("#admin").classList.remove("hide")}
 function adminClose(){$("#admin").classList.add("hide");$("#customer").classList.remove("hide");$("header").classList.remove("hide");home()}
-async function login(){let pin=$("#pin").value;if(window.CloudDB?.enabled()){try{await CloudDB.adminLogin(pin)}catch(e){console.error(e);return toast("Incorrect admin PIN")}}else if(pin!==S.settings.pin){return toast("Incorrect PIN")}authed=true;$("#login").classList.add("hide");$("#dash").classList.remove("hide");await syncAdminBookings();await syncCloudAvailability(true);adminRender()}
+async function login(){let pin=$("#pin").value;if(window.CloudDB?.enabled()){try{await CloudDB.adminLogin(pin);S.settings.pin=String(pin);save()}catch(e){console.error(e);return toast("Incorrect admin PIN")}}else if(pin!==S.settings.pin){return toast("Incorrect PIN")}authed=true;$("#login").classList.add("hide");$("#dash").classList.remove("hide");await syncAdminBookings();await syncCloudAvailability(true);adminRender()}
 async function tab(id){$$(".tab").forEach(x=>x.classList.add("hide"));$("#"+id).classList.remove("hide");await syncAdminBookings();await syncCloudAvailability(false);adminRender()}
 function adminRender(){if(!authed)return;let active=S.bookings.filter(b=>b.status!=="cancelled"),d=today();$("#todayCount").textContent=active.filter(b=>b.date===d).length;$("#upcomingCount").textContent=active.filter(b=>b.date>=d).length;$("#revenue").textContent="Ã‚Â£"+active.filter(b=>b.date>=d).reduce((a,b)=>a+b.price,0);if(!$("#diaryDate").value)$("#diaryDate").value=d;renderDiary();renderCustomers();renderServiceAdmin();renderGalleryAdmin();renderHours();renderBlocks();$("#businessName").value=S.settings.name;$("#tagline").value=S.settings.tag;$("#adminPin").value=S.settings.pin}
 function diaryIso(d){
@@ -398,5 +398,26 @@ async function blockDelete(id){
   }
 }
 
-function saveSettings(){S.settings.name=$("#businessName").value||"Hair Studio";S.settings.tag=$("#tagline").value;S.settings.pin=$("#adminPin").value||"1234";save();render();toast("Settings saved")}
+async function saveSettings(){
+  const newPin=String($("#adminPin").value||"").trim();
+  if(!newPin)return toast("Add an admin PIN");
+
+  try{
+    if(window.CloudDB?.enabled() && newPin!==String(S.settings.pin||"")){
+      if(typeof CloudDB.changeAdminPin!=="function")return toast("PIN update is not available");
+      await CloudDB.changeAdminPin(newPin);
+    }
+
+    S.settings.name=$("#businessName").value||"Hair Studio";
+    S.settings.tag=$("#tagline").value;
+    S.settings.pin=newPin;
+    save();
+    render();
+    adminRender();
+    toast("Settings saved");
+  }catch(e){
+    console.error(e);
+    toast("Could not update admin PIN");
+  }
+}
 render();home();syncCloudAvailability(false).then(()=>render()).catch(console.error);
