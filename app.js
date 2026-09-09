@@ -311,6 +311,17 @@ function adminClose(){if(document.body?.dataset.page==="admin"){location.href="/
 async function login(){let pin=$("#pin").value;if(window.CloudDB?.enabled()){try{await CloudDB.adminLogin(pin)}catch(e){console.error("Admin sign-in failed:",e);return toast("Could not sign in. Check your PIN and try again.")}S.settings.pin=String(pin);save();try{await bootstrapCloudFromThisDevice()}catch(e){console.error("Initial cloud sync failed:",e);toast("Signed in — refreshing cloud data…")}}else if(pin!==S.settings.pin){return toast("Incorrect PIN")}authed=true;$("#login").classList.add("hide");$("#dash").classList.remove("hide");await syncAdminBookings();await syncCloudAvailability(false);await syncCloudContent(false);await syncCloudGallery(false);adminRender()}
 async function tab(id){$$(".tab").forEach(x=>x.classList.add("hide"));$("#"+id).classList.remove("hide");await syncAdminBookings();await syncCloudAvailability(false);await syncCloudContent(false);await syncCloudGallery(false);adminRender()}
 function adminRender(){if(!authed)return;let active=S.bookings.filter(b=>bookingBlocksTime(b)),d=today();const tc=$("#todayCount"),uc=$("#upcomingCount"),rev=$("#revenue"),dd=$("#diaryDate");if(tc)tc.textContent=active.filter(b=>b.date===d).length;if(uc)uc.textContent=active.filter(b=>b.date>=d).length;if(rev)rev.textContent="£"+active.filter(b=>b.date>=d).reduce((a,b)=>a+b.price,0);if(dd&&!dd.value)dd.value=d;renderDiary();renderCustomers();renderServiceAdmin();renderGalleryAdmin();renderHours();renderBlocks();const bn=$("#businessName"),tg=$("#tagline"),ap=$("#adminPin");if(bn)bn.value=S.settings.name;if(tg)tg.value=S.settings.tag;if(ap)ap.value=S.settings.pin}
+function openUpcomingAppointments(){
+ const now=new Date();
+ const rows=S.bookings.filter(b=>bookingBlocksTime(b)&&new Date(`${b.date}T${b.time||"00:00"}:00`).getTime()>=now.getTime()).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+ const statusLabel=b=>({confirmed:"Booked",arrived:"Arrived",completed:"Completed",no_show:"No-show",cancelled:"Cancelled"}[b.status||"confirmed"]||"Booked");
+ const cards=rows.map(b=>{
+   const dep=b.deposit?`<small class="upcoming-deposit ${b.depositPaid?"paid":"due"}">${b.depositPaid?"Deposit paid":"£"+b.deposit+" deposit due"}</small>`:"";
+   return `<button class="upcoming-appt-card" type="button" onclick="openDiaryBooking('${b.id}')"><div class="upcoming-appt-date"><b>${nice(b.date)}</b><span>${esc(b.time||"")}</span></div><div class="upcoming-appt-main"><strong>${esc(b.name||"Customer")}</strong><span>${esc(b.serviceName||b.service||"Appointment")}</span>${dep}</div><em class="upcoming-appt-status">${statusLabel(b)}</em><i>›</i></button>`;
+ }).join("");
+ modal(`<div class="upcoming-list-modal"><span class="admin-kicker">UPCOMING</span><h2>Upcoming appointments</h2><p class="upcoming-list-count">${rows.length} appointment${rows.length===1?"":"s"}</p><div class="upcoming-appt-list">${cards||"<p>No upcoming appointments.</p>"}</div></div>`);
+}
+
 function diaryIso(d){
  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 }
