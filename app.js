@@ -256,7 +256,27 @@ async function setDepositPaid(id,paid){
 async function adminCancel(id){let b=S.bookings.find(x=>x.id===id);if(!b||!confirm("Cancel appointment?"))return;try{if(window.CloudDB?.enabled())await CloudDB.cancelBooking(id)}catch(e){console.error(e);return toast("Could not cancel online")}b.status="cancelled";save();adminRender()}
 function modal(html){$("#modalbody").innerHTML=html;$("#modal").classList.remove("hide")} function closeModal(){$("#modal").classList.add("hide")}
 function manual(){modal(`<h2>Add booking</h2><div class="form"><select id="ms">${S.services.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`)}</select><input id="mn" placeholder="Customer name"><input id="mp" placeholder="Mobile"><input id="md" type="date" value="${$("#diaryDate").value}"><input id="mt" type="time" value="09:00"><textarea id="mnotes" placeholder="Notes"></textarea><button class="primary" onclick="manualSave()">Save</button></div>`)}
-async function manualSave(){let x=S.services.find(s=>s.id===$("#ms").value),booking={id:uid(),name:$("#mn").value||"Customer",phone:$("#mp").value,notes:$("#mnotes").value,email:"",serviceId:x.id,serviceName:x.name,date:$("#md").value,time:$("#mt").value,duration:x.duration,price:x.price,basePrice:x.price,deposit:depositFor(x),depositPaid:false,pinCurls:false,status:"confirmed"};try{if(window.CloudDB?.enabled()){let r=await CloudDB.createAdminBooking(booking);if(r?.booking)booking=r.booking}}catch(e){console.error(e);return toast("Could not save booking online")}S.bookings.push(booking);save();closeModal();await syncAdminBookings();adminRender()}
+async function manualSave(){
+  let x=S.services.find(s=>s.id===$("#ms").value),booking={id:uid(),name:$("#mn").value||"Customer",phone:$("#mp").value,notes:$("#mnotes").value,email:"",serviceId:x.id,serviceName:x.name,date:$("#md").value,time:$("#mt").value,duration:x.duration,price:x.price,basePrice:x.price,deposit:depositFor(x),depositPaid:false,pinCurls:false,status:"confirmed"};
+  if(!booking.date||!booking.time)return toast("Choose a date and time");
+
+  const clashes=S.bookings.filter(b=>b.status!=="cancelled"&&b.date===booking.date&&overlap(booking.time,booking.duration,b.time,Number(b.duration||60)));
+  const blocked=S.blocks.filter(b=>b.date===booking.date&&overlap(booking.time,booking.duration,b.start,mins(b.end)-mins(b.start)));
+  const dow=new Date(booking.date+"T12:00").getDay(),h=S.hours[dow];
+  const outsideHours=!h?.open||mins(booking.time)<mins(h.start)||mins(booking.time)+booking.duration>mins(h.end);
+
+  if(clashes.length||blocked.length||outsideHours){
+    let warning="This admin booking needs an override:\n\n";
+    if(clashes.length)warning+=`• Overlaps ${clashes.length} existing appointment${clashes.length===1?"":"s"}.\n`;
+    if(blocked.length)warning+=`• Overlaps blocked time.\n`;
+    if(outsideHours)warning+=`• Falls outside normal working hours.\n`;
+    warning+="\nBook it anyway?";
+    if(!confirm(warning))return;
+  }
+
+  try{if(window.CloudDB?.enabled()){let r=await CloudDB.createAdminBooking(booking);if(r?.booking)booking=r.booking}}catch(e){console.error(e);return toast("Could not save booking online")}
+  S.bookings.push(booking);save();closeModal();await syncAdminBookings();adminRender();toast("Booking saved");
+}
 function renderCustomers(){let m={};S.bookings.filter(b=>b.status!=="cancelled").forEach(b=>{let k=b.phone;m[k]=m[k]||{name:b.name,phone:b.phone,count:0};m[k].count++});$("#customerList").innerHTML=Object.values(m).map(c=>`<div class="adminrow"><div><b>${esc(c.name)}</b><br>${esc(c.phone)}</div><small>${c.count} booking(s)</small></div>`).join("")||"No customers yet."}
 
 function renderGalleryAdmin(){
