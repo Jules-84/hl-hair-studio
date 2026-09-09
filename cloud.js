@@ -21,6 +21,7 @@
     price:Number(r.price),
     basePrice:Number(r.base_price),
     deposit:Number(r.deposit),
+    depositPaid:!!r.deposit_paid,
     pinCurls:!!r.pin_curls,
     status:r.status||"confirmed"
   });
@@ -49,6 +50,7 @@
       price:b.price,
       base_price:b.basePrice,
       deposit:b.deposit,
+      deposit_paid:!!b.depositPaid,
       pin_curls:!!b.pinCurls,
       status:b.status||"confirmed"
     };
@@ -105,6 +107,21 @@
 
     if(error)throw error;
     return (data||[]).map(mapBooking);
+  }
+
+
+  async function updateDepositPaid(id,paid){
+    if(!client)return {localOnly:true};
+
+    const {data,error}=await client
+      .from("bookings")
+      .update({deposit_paid:!!paid})
+      .eq("id",id)
+      .select("id,deposit_paid")
+      .single();
+
+    if(error)throw error;
+    return {id:data.id,depositPaid:!!data.deposit_paid};
   }
 
   async function cancelBooking(id){
@@ -260,6 +277,7 @@
     adminLogin,
     changeAdminPin,
     fetchBookings,
+    updateDepositPaid,
     cancelBooking,
     fetchAvailability,
     saveAvailability,

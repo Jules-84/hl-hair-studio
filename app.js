@@ -100,7 +100,7 @@ function details(){
  <div class="booking-total"><span>Service total</span><b>${total===0?"Free":"£"+total}</b></div>
  <button class="primary full" onclick="confirmBook()">Request booking</button></div>`;
 }
-async function confirmBook(){let n=$("#bn").value.trim(),p=$("#bp").value.trim();if(!n||!p)return toast("Add your name and mobile");let x=W.service,booking={id:uid(),name:n,phone:p,email:$("#be").value,notes:$("#bnotes").value,serviceId:x.id,serviceName:x.name,date:W.date,time:W.time,duration:x.duration,price:x.price+(W.pinCurls?2:0),basePrice:x.price,deposit:depositFor(x),pinCurls:!!W.pinCurls,status:"confirmed"};let btn=$("#bookbody .primary.full");if(btn){btn.disabled=true;btn.textContent="Saving booking…"}try{if(window.CloudDB?.enabled()){let r=await CloudDB.createBooking(booking);if(r?.booking)booking=r.booking}}catch(e){console.error(e);if(btn){btn.disabled=false;btn.textContent="Request booking"}return toast((e?.message||"").includes("appointment time")?"That time has just been taken. Please choose another time.":"Could not save booking online. Please try again.")}S.bookings.push(booking);save();$("#bookbody").innerHTML=`<div class="bookcard" style="text-align:center"><h2>✓ You're booked</h2><p>${nice(W.date)} at ${W.time}${W.pinCurls?"<br>Pin Curls +£2":""}</p>${depositFor(x)?`<div class="deposit-confirm"><b>£${depositFor(x)} deposit required</b><br><span>Your payment details will be sent to you separately to secure the appointment.</span></div>`:""}<p class="confirm-address">Cobella &amp; Co<br>215 London Road, Hazel Grove, Stockport, SK7 4HS</p><button class="primary" onclick="home()">Done</button></div>`;if(authed)adminRender()}
+async function confirmBook(){let n=$("#bn").value.trim(),p=$("#bp").value.trim();if(!n||!p)return toast("Add your name and mobile");let x=W.service,booking={id:uid(),name:n,phone:p,email:$("#be").value,notes:$("#bnotes").value,serviceId:x.id,serviceName:x.name,date:W.date,time:W.time,duration:x.duration,price:x.price+(W.pinCurls?2:0),basePrice:x.price,deposit:depositFor(x),depositPaid:false,pinCurls:!!W.pinCurls,status:"confirmed"};let btn=$("#bookbody .primary.full");if(btn){btn.disabled=true;btn.textContent="Saving booking…"}try{if(window.CloudDB?.enabled()){let r=await CloudDB.createBooking(booking);if(r?.booking)booking=r.booking}}catch(e){console.error(e);if(btn){btn.disabled=false;btn.textContent="Request booking"}return toast((e?.message||"").includes("appointment time")?"That time has just been taken. Please choose another time.":"Could not save booking online. Please try again.")}S.bookings.push(booking);save();$("#bookbody").innerHTML=`<div class="bookcard" style="text-align:center"><h2>✓ You're booked</h2><p>${nice(W.date)} at ${W.time}${W.pinCurls?"<br>Pin Curls +£2":""}</p>${depositFor(x)?`<div class="deposit-confirm"><b>£${depositFor(x)} deposit required</b><br><span>Your payment details will be sent to you separately to secure the appointment.</span></div>`:""}<p class="confirm-address">Cobella &amp; Co<br>215 London Road, Hazel Grove, Stockport, SK7 4HS</p><button class="primary" onclick="home()">Done</button></div>`;if(authed)adminRender()}
 function lookup(){let p=$("#lookup").value.replace(/\D/g,"");let a=S.bookings.filter(b=>b.phone.replace(/\D/g,"")===p&&b.status!=="cancelled");$("#mineList").innerHTML=a.length?a.map(b=>`<div class="bookingrow"><div><b>${esc(b.serviceName)}</b><br>${nice(b.date)} at ${b.time}${b.pinCurls?" · Pin Curls +£2":""}</div><button onclick="cancel('${b.id}')">Cancel</button></div>`).join(""):"<div class='card'>No bookings found.</div>"} function cancel(id){let b=S.bookings.find(x=>x.id===id);if(b&&confirm("Cancel this booking?")){b.status="cancelled";save();lookup();adminRender()}}
 async function syncAdminBookings(){if(!window.CloudDB?.enabled())return;try{let rows=await CloudDB.fetchBookings();if(Array.isArray(rows)){S.bookings=rows;save()}}catch(e){console.error(e);toast("Could not refresh online bookings")}}
 function cloudHoursToLocal(row){
@@ -197,10 +197,12 @@ function renderDiary(){
  const cards=laid.map((item,i)=>{
    const x=item.booking,st=item.start,d=Number(x.duration||60),en=item.end;
    const eh=Math.floor(en/60),em=en%60,left=8+item.col*(colWidth+gap);
-   return `<button class="diary-appt diary-tone-${i%4}" style="top:${Math.max(0,(st-start)*ppm)}px;height:${Math.max(38,d*ppm)}px;left:${left}px;width:${colWidth}px" onclick="openDiaryBooking('${x.id}')">
+   const depositClass=!Number(x.deposit)?"deposit-none":(x.depositPaid?"deposit-paid":"deposit-due");
+   const depositLabel=!Number(x.deposit)?"No deposit":(x.depositPaid?`✓ £${x.deposit} deposit paid`:`£${x.deposit} deposit due`);
+   return `<button class="diary-appt ${depositClass}" style="top:${Math.max(0,(st-start)*ppm)}px;height:${Math.max(38,d*ppm)}px;left:${left}px;width:${colWidth}px" onclick="openDiaryBooking('${x.id}')">
       <b>${x.time} – ${eh}:${String(em).padStart(2,"0")} · ${esc(x.name)}</b>
       <span>${esc(x.serviceName||x.service||"Appointment")}${x.pinCurls?" · Pin Curls":""}</span>
-      ${d>=60?`<small>${x.deposit?`£${x.deposit} deposit`:"No deposit"}</small>`:""}
+      ${d>=45?`<small>${depositLabel}</small>`:""}
    </button>`;
  }).join("");
  const laneWidth=Math.max(660,maxCols*(colWidth+gap)+24);
@@ -230,12 +232,31 @@ function diaryMove(n){
 function diaryToday(){window.diaryDate=today();const input=$("#diaryDate");if(input)input.value=window.diaryDate;renderDiary()}
 function openDiaryBooking(id){
  let b=S.bookings.find(x=>x.id===id);if(!b)return;
- modal(`<h2>${esc(b.name)}</h2><div class="summary"><b>${esc(b.serviceName||b.service||"Appointment")}</b>${b.pinCurls?"<br>+ Pin Curls":""}<br>${nice(b.date)} at ${b.time}<br>${esc(b.phone||"")}${b.email?`<br>${esc(b.email)}`:""}<br><br>${b.deposit?`Deposit required: £${b.deposit}`:"No deposit required"}${b.notes?`<br><br>Notes: ${esc(b.notes)}`:""}</div></div>`);
+ const depositHtml=Number(b.deposit)>0
+   ? `<label class="deposit-paid-control ${b.depositPaid?"is-paid":"is-due"}"><input type="checkbox" ${b.depositPaid?"checked":""} onchange="setDepositPaid('${b.id}',this.checked)"><span><b>${b.depositPaid?"Deposit paid":"Deposit still due"}</b><small>£${b.deposit} deposit</small></span></label>`
+   : `<div class="deposit-no-payment">No deposit required</div>`;
+ modal(`<h2>${esc(b.name)}</h2><div class="summary"><b>${esc(b.serviceName||b.service||"Appointment")}</b>${b.pinCurls?"<br>+ Pin Curls":""}<br>${nice(b.date)} at ${b.time}<br>${esc(b.phone||"")}${b.email?`<br>${esc(b.email)}`:""}${b.notes?`<br><br>Notes: ${esc(b.notes)}`:""}</div>${depositHtml}`);
+}
+async function setDepositPaid(id,paid){
+ const b=S.bookings.find(x=>x.id===id);if(!b)return;
+ const previous=!!b.depositPaid;
+ b.depositPaid=!!paid;
+ save();
+ renderDiary();
+ try{
+   if(window.CloudDB?.enabled())await CloudDB.updateDepositPaid(id,paid);
+   toast(paid?"Deposit marked as paid":"Deposit marked as due");
+   openDiaryBooking(id);
+ }catch(e){
+   console.error(e);
+   b.depositPaid=previous;save();renderDiary();openDiaryBooking(id);
+   toast("Could not update deposit online");
+ }
 }
 async function adminCancel(id){let b=S.bookings.find(x=>x.id===id);if(!b||!confirm("Cancel appointment?"))return;try{if(window.CloudDB?.enabled())await CloudDB.cancelBooking(id)}catch(e){console.error(e);return toast("Could not cancel online")}b.status="cancelled";save();adminRender()}
 function modal(html){$("#modalbody").innerHTML=html;$("#modal").classList.remove("hide")} function closeModal(){$("#modal").classList.add("hide")}
 function manual(){modal(`<h2>Add booking</h2><div class="form"><select id="ms">${S.services.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`)}</select><input id="mn" placeholder="Customer name"><input id="mp" placeholder="Mobile"><input id="md" type="date" value="${$("#diaryDate").value}"><input id="mt" type="time" value="09:00"><textarea id="mnotes" placeholder="Notes"></textarea><button class="primary" onclick="manualSave()">Save</button></div>`)}
-async function manualSave(){let x=S.services.find(s=>s.id===$("#ms").value),booking={id:uid(),name:$("#mn").value||"Customer",phone:$("#mp").value,notes:$("#mnotes").value,email:"",serviceId:x.id,serviceName:x.name,date:$("#md").value,time:$("#mt").value,duration:x.duration,price:x.price,basePrice:x.price,deposit:depositFor(x),pinCurls:false,status:"confirmed"};try{if(window.CloudDB?.enabled()){let r=await CloudDB.createAdminBooking(booking);if(r?.booking)booking=r.booking}}catch(e){console.error(e);return toast("Could not save booking online")}S.bookings.push(booking);save();closeModal();await syncAdminBookings();adminRender()}
+async function manualSave(){let x=S.services.find(s=>s.id===$("#ms").value),booking={id:uid(),name:$("#mn").value||"Customer",phone:$("#mp").value,notes:$("#mnotes").value,email:"",serviceId:x.id,serviceName:x.name,date:$("#md").value,time:$("#mt").value,duration:x.duration,price:x.price,basePrice:x.price,deposit:depositFor(x),depositPaid:false,pinCurls:false,status:"confirmed"};try{if(window.CloudDB?.enabled()){let r=await CloudDB.createAdminBooking(booking);if(r?.booking)booking=r.booking}}catch(e){console.error(e);return toast("Could not save booking online")}S.bookings.push(booking);save();closeModal();await syncAdminBookings();adminRender()}
 function renderCustomers(){let m={};S.bookings.filter(b=>b.status!=="cancelled").forEach(b=>{let k=b.phone;m[k]=m[k]||{name:b.name,phone:b.phone,count:0};m[k].count++});$("#customerList").innerHTML=Object.values(m).map(c=>`<div class="adminrow"><div><b>${esc(c.name)}</b><br>${esc(c.phone)}</div><small>${c.count} booking(s)</small></div>`).join("")||"No customers yet."}
 
 function renderGalleryAdmin(){

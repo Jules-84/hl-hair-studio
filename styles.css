@@ -460,3 +460,17 @@ header{
 .diary-appt b{font-size:.74rem!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.diary-appt span{font-size:.7rem!important;margin-top:2px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.diary-appt small{font-size:.62rem!important;display:block;margin-top:2px}
 .diary-tone-0{background:#ead9d1!important}.diary-tone-1{background:#e4d9e1!important}.diary-tone-2{background:#dce4d7!important}.diary-tone-3{background:#eadfca!important}.no-day-bookings{color:#8f8077!important;padding:22px!important}
 @media(max-width:700px){.dashboard article{padding:12px!important}.diary-card{padding:9px!important}.diary-date-row{justify-content:stretch}.diary-date-row label{width:100%;justify-content:space-between}.photos{grid-template-columns:1fr 1fr}}
+
+
+/* ===== v26 deposit payment status ===== */
+.diary-appt.deposit-due{background:#f4d8d6!important;border-color:#d89a96!important;color:#3f2321!important}
+.diary-appt.deposit-paid{background:#dcebd9!important;border-color:#9fbe9a!important;color:#20351f!important}
+.diary-appt.deposit-none{background:#eee7df!important;border-color:#d3c6bb!important;color:#403832!important}
+.diary-appt.deposit-due small{color:#8c3731!important;font-weight:800}
+.diary-appt.deposit-paid small{color:#356b34!important;font-weight:800}
+.deposit-paid-control{display:flex;align-items:center;gap:12px;margin-top:18px;padding:14px 15px;border-radius:13px;border:1px solid;cursor:pointer;transition:.15s ease}
+.deposit-paid-control input{width:20px!important;height:20px!important;margin:0;accent-color:#568454;flex:0 0 auto}
+.deposit-paid-control span{display:flex;flex-direction:column;gap:2px;text-align:left}.deposit-paid-control b{font-size:.92rem}.deposit-paid-control small{font-size:.76rem;opacity:.78}
+.deposit-paid-control.is-due{background:#f8e5e3;border-color:#d9a29e;color:#6c302c}
+.deposit-paid-control.is-paid{background:#e4f0e1;border-color:#a7c5a2;color:#2d5a2b}
+.deposit-no-payment{margin-top:18px;padding:12px 14px;border-radius:12px;background:#eee8e1;border:1px solid #d8ccc2;color:#6f6259;font-weight:700;font-size:.85rem}
