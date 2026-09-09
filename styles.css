@@ -580,3 +580,8 @@ header{
 .admin-forgot-pin:disabled{opacity:.55;cursor:wait}
 .admin-reset-message{min-height:18px;margin:8px 0 2px;font-size:13px;line-height:1.35;color:#6a5f55;text-align:center}
 @media(max-width:700px){.admin-forgot-pin{padding:13px 10px;font-size:15px}.admin-reset-message{font-size:14px}}
+
+/* v31.11 — admin logout */
+.admin-logout{margin-top:8px!important;border:1px solid rgba(255,255,255,.16)!important;background:#342c28!important;color:#fff!important;border-radius:11px!important;padding:11px 12px!important;text-align:left!important;cursor:pointer}
+.admin-logout:hover{background:#493d37!important}
+@media(max-width:700px){.admin-logout{display:block!important;flex:0 0 auto!important;min-height:44px!important;margin-top:0!important;padding:10px 14px!important;background:#5a4038!important;text-align:center!important}}

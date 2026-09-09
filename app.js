@@ -310,6 +310,22 @@ function adminOpen(){const customer=$("#customer"),header=$("header"),admin=$("#
 function adminClose(){if(document.body?.dataset.page==="admin"){location.href="/";return}const admin=$("#admin"),customer=$("#customer"),header=$("header");if(admin)admin.classList.add("hide");if(customer)customer.classList.remove("hide");if(header)header.classList.remove("hide");home()}
 async function login(){let pin=$("#pin").value;if(window.CloudDB?.enabled()){try{await CloudDB.adminLogin(pin)}catch(e){console.error("Admin sign-in failed:",e);return toast("Could not sign in. Check your PIN and try again.")}S.settings.pin=String(pin);save();try{await bootstrapCloudFromThisDevice()}catch(e){console.error("Initial cloud sync failed:",e);toast("Signed in — refreshing cloud data…")}}else if(pin!==S.settings.pin){return toast("Incorrect PIN")}authed=true;$("#login").classList.add("hide");$("#dash").classList.remove("hide");await syncAdminBookings();await syncCloudAvailability(false);await syncCloudContent(false);await syncCloudGallery(false);adminRender()}
 
+async function adminLogout(){
+  try{
+    if(window.CloudDB?.enabled()&&CloudDB.adminLogout)await CloudDB.adminLogout();
+  }catch(e){
+    console.error("Admin sign-out failed:",e);
+    return toast("Could not log out. Please try again.");
+  }
+  authed=false;
+  const pin=document.getElementById("pin");
+  if(pin)pin.value="";
+  document.getElementById("dash")?.classList.add("hide");
+  document.getElementById("login")?.classList.remove("hide");
+  window.scrollTo({top:0,behavior:"auto"});
+  toast("Logged out");
+}
+
 async function forgotPin(){
   const btn=document.getElementById("forgotPinBtn");
   const msg=document.getElementById("forgotPinMessage");

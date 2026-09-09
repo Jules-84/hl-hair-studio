@@ -229,6 +229,13 @@
     return data;
   }
 
+  async function adminLogout(){
+    if(!client)return {localOnly:true};
+    const {error}=await client.auth.signOut();
+    if(error)throw error;
+    return {ok:true};
+  }
+
   async function changeAdminPin(pin){
     if(!client)return {localOnly:true};
 
@@ -469,6 +476,7 @@
     customerRescheduleBooking,
     busySlots,
     adminLogin,
+    adminLogout,
     changeAdminPin,
     sendAdminPinReset,
     onAuthStateChange,
