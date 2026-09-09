@@ -309,6 +309,26 @@ async function bootstrapCloudFromThisDevice(){
 function adminOpen(){const customer=$("#customer"),header=$("header"),admin=$("#admin");if(customer)customer.classList.add("hide");if(header)header.classList.add("hide");if(admin)admin.classList.remove("hide")}
 function adminClose(){if(document.body?.dataset.page==="admin"){location.href="/";return}const admin=$("#admin"),customer=$("#customer"),header=$("header");if(admin)admin.classList.add("hide");if(customer)customer.classList.remove("hide");if(header)header.classList.remove("hide");home()}
 async function login(){let pin=$("#pin").value;if(window.CloudDB?.enabled()){try{await CloudDB.adminLogin(pin)}catch(e){console.error("Admin sign-in failed:",e);return toast("Could not sign in. Check your PIN and try again.")}S.settings.pin=String(pin);save();try{await bootstrapCloudFromThisDevice()}catch(e){console.error("Initial cloud sync failed:",e);toast("Signed in — refreshing cloud data…")}}else if(pin!==S.settings.pin){return toast("Incorrect PIN")}authed=true;$("#login").classList.add("hide");$("#dash").classList.remove("hide");await syncAdminBookings();await syncCloudAvailability(false);await syncCloudContent(false);await syncCloudGallery(false);adminRender()}
+
+async function forgotPin(){
+  const btn=document.getElementById("forgotPinBtn");
+  const msg=document.getElementById("forgotPinMessage");
+  const say=t=>{if(msg)msg.textContent=t;else toast(t)};
+  if(!window.CloudDB?.enabled()||typeof CloudDB.sendAdminPinReset!=="function")return say("PIN reset is unavailable right now");
+  try{
+    if(btn){btn.disabled=true;btn.textContent="Sending reset email…"}
+    say("Sending a secure reset link to your admin email…");
+    await CloudDB.sendAdminPinReset();
+    say("Reset email sent. Open the newest email and follow the link to create a new PIN.");
+  }catch(e){
+    console.error("PIN reset email failed:",e);
+    const text=String(e?.message||"");
+    if(/rate limit/i.test(text))say("Too many reset emails have been requested. Wait about an hour, then try once more.");
+    else say(text||"Could not send the reset email. Please try again later.");
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent="Forgot PIN? Email me a reset link"}
+  }
+}
 async function tab(id){$$(".tab").forEach(x=>x.classList.add("hide"));$("#"+id).classList.remove("hide");await syncAdminBookings();await syncCloudAvailability(false);await syncCloudContent(false);await syncCloudGallery(false);adminRender()}
 function adminRender(){if(!authed)return;let active=S.bookings.filter(b=>bookingBlocksTime(b)),d=today();const tc=$("#todayCount"),uc=$("#upcomingCount"),rev=$("#revenue"),dd=$("#diaryDate");if(tc)tc.textContent=active.filter(b=>b.date===d).length;if(uc)uc.textContent=active.filter(b=>b.date>=d).length;if(rev)rev.textContent="£"+active.filter(b=>b.date>=d).reduce((a,b)=>a+b.price,0);if(dd&&!dd.value)dd.value=d;renderDiary();renderCustomers();renderServiceAdmin();renderGalleryAdmin();renderHours();renderBlocks();const bn=$("#businessName"),tg=$("#tagline"),ap=$("#adminPin");if(bn)bn.value=S.settings.name;if(tg)tg.value=S.settings.tag;if(ap)ap.value=S.settings.pin}
 function openUpcomingAppointments(){

@@ -177,28 +177,6 @@
     return {booking:b};
   }
 
-  async function createAdminBooking(b){
-    if(!client)return {localOnly:true,booking:b};
-    const payload={
-      customer_name:b.name,phone:b.phone,email:b.email||null,notes:b.notes||null,
-      service_id:b.serviceId,service_name:b.serviceName,appointment_date:b.date,appointment_time:b.time,
-      duration:b.duration,price:b.price,base_price:b.basePrice,deposit:b.deposit,deposit_paid:!!b.depositPaid,
-      pin_curls:!!b.pinCurls,status:b.status||"confirmed",booking_ref:b.bookingRef||null
-    };
-    const {data,error}=await client.rpc("admin_create_booking",{p_booking:payload});
-    if(error){
-      // Backwards-compatible fallback for salons that have not run the v31.5 SQL yet.
-      if(/admin_create_booking|function .* does not exist|schema cache/i.test(error.message||"")){
-        const direct=await client.from("bookings").insert(payload);
-        if(direct.error)throw direct.error;
-        return {booking:b};
-      }
-      throw error;
-    }
-    if(data)b.id=String(data);
-    return {booking:b};
-  }
-
   async function busySlots(date){
     if(!client)return [];
 
@@ -450,6 +428,17 @@
     return {deleted:deleted.length};
   }
 
+  async function sendAdminPinReset(){
+    if(!client)throw new Error("Online PIN reset is unavailable");
+    if(!cfg.adminEmail)throw new Error("Admin email is not configured");
+
+    const {data,error}=await client.auth.resetPasswordForEmail(cfg.adminEmail,{
+      redirectTo:`${window.location.origin}/`
+    });
+    if(error)throw error;
+    return data;
+  }
+
   function onAuthStateChange(callback){
     if(!client||typeof callback!=="function")return {data:{subscription:null}};
     return client.auth.onAuthStateChange((event,session)=>callback(event,session));
@@ -474,13 +463,14 @@
   window.CloudDB={
     enabled:()=>!!client,
     createBooking,
-    createAdminBooking,
+    createAdminBooking:createBooking,
     customerGetBookings,
     customerRescheduleBusySlots,
     customerRescheduleBooking,
     busySlots,
     adminLogin,
     changeAdminPin,
+    sendAdminPinReset,
     onAuthStateChange,
     getAuthSession,
     finishPasswordRecovery,
