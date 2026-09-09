@@ -334,9 +334,11 @@ function renderDiary(){
  const bookings=S.bookings.filter(b=>b.date===date&&b.status!=="cancelled").sort((a,b)=>a.time.localeCompare(b.time));
  const isPhone=window.matchMedia&&window.matchMedia("(max-width: 700px)").matches;
 
- const start=8*60,end=20*60,ppm=isPhone?1.05:.64,height=(end-start)*ppm;
+ // Admin diary display is deliberately wider than customer bookable hours.
+ // Customers still use S.hours in slots(); admin can manually add outside those hours.
+ const start=7*60,end=23*60,ppm=isPhone?1.05:.64,height=(end-start)*ppm;
  let hours="";
- for(let h=8;h<=20;h++){
+ for(let h=7;h<=23;h++){
    const label=h===12?"12 pm":h>12?`${h-12} pm`:`${h} am`;
    hours+=`<div class="diary-hour" style="top:${(h*60-start)*ppm}px"><span>${label}</span></div>`;
  }

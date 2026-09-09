@@ -1,4 +1,4 @@
-const CACHE="hl-hair-studio-v31-6-upcoming-list-1";
+const CACHE="hl-hair-studio-v31-7-extended-admin-diary-1";
 
 const STATIC=[
   "./",
