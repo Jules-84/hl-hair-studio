@@ -662,7 +662,49 @@ async function saveSettings(){
     toast("Could not save settings online");
   }
 }
+
+function recoveryLinkPresent(){
+  const text=(location.hash||"")+"&"+(location.search||"");
+  return /type=recovery|access_token=|code=/.test(text);
+}
+function showAdminPinReset(){
+  if(document.getElementById("pinResetOverlay"))return;
+  const wrap=document.createElement("div");
+  wrap.id="pinResetOverlay";
+  wrap.className="pin-reset-overlay";
+  wrap.innerHTML=`<div class="pin-reset-card"><img src="assets/hair_studio_logo.png" alt="Hair Studio logo"><span class="admin-kicker">ADMIN SECURITY</span><h2>Reset Admin PIN</h2><p>Enter the PIN you want to use to open Hair Studio Admin on every device.</p><input id="resetAdminPin" type="password" inputmode="numeric" autocomplete="new-password" placeholder="New PIN"><input id="resetAdminPin2" type="password" inputmode="numeric" autocomplete="new-password" placeholder="Confirm new PIN"><button class="primary full" onclick="completeAdminPinReset()">Save new PIN</button><small>Do not share your PIN with anyone.</small></div>`;
+  document.body.appendChild(wrap);
+}
+async function completeAdminPinReset(){
+  const a=String(document.getElementById("resetAdminPin")?.value||"").trim();
+  const b=String(document.getElementById("resetAdminPin2")?.value||"").trim();
+  if(!a)return toast("Enter your new PIN");
+  if(a!==b)return toast("The PINs do not match");
+  try{
+    await CloudDB.finishPasswordRecovery(a);
+    S.settings.pin=a;save();
+    history.replaceState({},document.title,location.pathname);
+    document.getElementById("pinResetOverlay")?.remove();
+    toast("Admin PIN updated");
+    setTimeout(()=>location.href="/admin/",700);
+  }catch(e){console.error(e);toast("Could not reset PIN. Please request a new recovery email.")}
+}
+function initAdminPinRecovery(){
+  if(!window.CloudDB?.enabled())return;
+  let shown=false;
+  const show=()=>{if(!shown){shown=true;showAdminPinReset()}};
+  if(typeof CloudDB.onAuthStateChange==="function"){
+    CloudDB.onAuthStateChange((event)=>{if(event==="PASSWORD_RECOVERY")show()});
+  }
+  if(recoveryLinkPresent()){
+    setTimeout(async()=>{
+      try{const session=await CloudDB.getAuthSession();if(session)show()}catch(e){console.error(e)}
+    },250);
+  }
+}
+
 const IS_ADMIN_PAGE=document.body?.dataset.page==="admin";
+initAdminPinRecovery();
 if(IS_ADMIN_PAGE){
   Promise.all([syncCloudAvailability(false),syncCloudContent(false),syncCloudGallery(false)]).catch(console.error);
 }else{

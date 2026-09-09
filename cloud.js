@@ -428,6 +428,27 @@
     return {deleted:deleted.length};
   }
 
+  function onAuthStateChange(callback){
+    if(!client||typeof callback!=="function")return {data:{subscription:null}};
+    return client.auth.onAuthStateChange((event,session)=>callback(event,session));
+  }
+
+  async function getAuthSession(){
+    if(!client)return null;
+    const {data,error}=await client.auth.getSession();
+    if(error)throw error;
+    return data?.session||null;
+  }
+
+  async function finishPasswordRecovery(pin){
+    if(!client)throw new Error("Online password reset is unavailable");
+    const value=String(pin||"").trim();
+    if(!value)throw new Error("PIN cannot be empty");
+    const {data,error}=await client.auth.updateUser({password:value});
+    if(error)throw error;
+    return data;
+  }
+
   window.CloudDB={
     enabled:()=>!!client,
     createBooking,
@@ -438,6 +459,9 @@
     busySlots,
     adminLogin,
     changeAdminPin,
+    onAuthStateChange,
+    getAuthSession,
+    finishPasswordRecovery,
     fetchBookings,
     updateDepositPaid,
     updateBookingStatus,
