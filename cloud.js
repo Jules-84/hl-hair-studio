@@ -24,7 +24,8 @@
     depositPaid:!!r.deposit_paid,
     pinCurls:!!r.pin_curls,
     status:r.status||"confirmed",
-    bookingRef:r.booking_ref||""
+    bookingRef:r.booking_ref||"",
+    customerHidden:!!r.customer_hidden
   });
 
   const mapBlock=r=>({
@@ -262,6 +263,18 @@
 
 
 
+  async function hideCustomer(phone){
+    if(!client)return {localOnly:true};
+    const value=String(phone||"").trim();
+    if(!value)throw new Error("Customer mobile number is missing");
+    const {error}=await client
+      .from("bookings")
+      .update({customer_hidden:true})
+      .eq("phone",value);
+    if(error)throw error;
+    return true;
+  }
+
   async function updateBookingStatus(id,status){
     if(!client)return {localOnly:true};
     const allowed=["confirmed","arrived","completed","no_show","cancelled"];
@@ -483,6 +496,7 @@
     getAuthSession,
     finishPasswordRecovery,
     fetchBookings,
+    hideCustomer,
     updateDepositPaid,
     updateBookingStatus,
     cancelBooking,
