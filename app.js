@@ -687,23 +687,39 @@ function showAdminPinReset(){
   const wrap=document.createElement("div");
   wrap.id="pinResetOverlay";
   wrap.className="pin-reset-overlay";
-  wrap.innerHTML=`<div class="pin-reset-card"><img src="assets/hair_studio_logo.png" alt="Hair Studio logo"><span class="admin-kicker">ADMIN SECURITY</span><h2>Reset Admin PIN</h2><p>Enter the PIN you want to use to open Hair Studio Admin on every device.</p><input id="resetAdminPin" type="password" inputmode="numeric" autocomplete="new-password" placeholder="New PIN"><input id="resetAdminPin2" type="password" inputmode="numeric" autocomplete="new-password" placeholder="Confirm new PIN"><button class="primary full" onclick="completeAdminPinReset()">Save new PIN</button><small>Do not share your PIN with anyone.</small></div>`;
+  wrap.innerHTML=`<div class="pin-reset-card"><img src="assets/hair_studio_logo.png" alt="Hair Studio logo"><span class="admin-kicker">ADMIN SECURITY</span><h2>Reset Admin PIN</h2><p>Enter the PIN you want to use to open Hair Studio Admin on every device.</p><input id="resetAdminPin" type="password" inputmode="numeric" autocomplete="new-password" placeholder="New PIN"><input id="resetAdminPin2" type="password" inputmode="numeric" autocomplete="new-password" placeholder="Confirm new PIN"><button id="saveAdminPinBtn" type="button" class="primary full">Save new PIN</button><div id="pinResetMessage" class="pin-reset-message" aria-live="polite"></div><small>Do not share your PIN with anyone.</small></div>`;
   document.body.appendChild(wrap);
+  const btn=document.getElementById("saveAdminPinBtn");
+  if(btn)btn.addEventListener("click",completeAdminPinReset);
 }
 async function completeAdminPinReset(){
   const a=String(document.getElementById("resetAdminPin")?.value||"").trim();
   const b=String(document.getElementById("resetAdminPin2")?.value||"").trim();
-  if(!a)return toast("Enter your new PIN");
-  if(a!==b)return toast("The PINs do not match");
+  const btn=document.getElementById("saveAdminPinBtn");
+  const msg=document.getElementById("pinResetMessage");
+  const say=(text)=>{if(msg)msg.textContent=text;toast(text)};
+  if(!a)return say("Enter your new PIN");
+  if(!/^\d{6,}$/.test(a))return say("Use a numeric PIN with at least 6 digits");
+  if(a!==b)return say("The PINs do not match");
   try{
+    if(btn){btn.disabled=true;btn.textContent="Saving…"}
+    if(msg)msg.textContent="Saving your new PIN…";
+    const session=await CloudDB.getAuthSession();
+    if(!session)throw new Error("Recovery session is not active. Reopen the newest recovery email link.");
     await CloudDB.finishPasswordRecovery(a);
     S.settings.pin=a;save();
+    if(msg)msg.textContent="PIN updated. Opening Admin…";
     history.replaceState({},document.title,location.pathname);
-    document.getElementById("pinResetOverlay")?.remove();
-    toast("Admin PIN updated");
-    setTimeout(()=>location.href="/admin/",700);
-  }catch(e){console.error(e);toast("Could not reset PIN. Please request a new recovery email.")}
+    setTimeout(()=>location.href="/admin/",650);
+  }catch(e){
+    console.error(e);
+    const text=e?.message||"Could not reset PIN";
+    if(msg)msg.textContent=text;
+    toast(text);
+    if(btn){btn.disabled=false;btn.textContent="Save new PIN"}
+  }
 }
+window.completeAdminPinReset=completeAdminPinReset;
 function initAdminPinRecovery(){
   if(!window.CloudDB?.enabled())return;
   let shown=false;
