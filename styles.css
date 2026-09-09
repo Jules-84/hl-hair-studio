@@ -416,3 +416,47 @@ header{
 }
 
 /* ===== v19 direct back to full services ===== */
+
+
+/* ===== v25 polish: complete logo, natural gallery, separate admin ===== */
+.brand.branded img{width:46px;height:46px;object-fit:contain!important;border-radius:50%!important;padding:3px;background:#efe2d4}
+.hero-logo{object-fit:contain!important;padding:8px;background:#efe2d4}
+
+/* Show the complete photograph instead of cropping it into dark/boxed tiles. */
+.photos{align-items:start;grid-auto-rows:auto}
+.photos button{aspect-ratio:auto!important;background:transparent!important;box-shadow:none!important;overflow:visible!important}
+.photos img{height:auto!important;max-height:none;object-fit:contain!important;border-radius:14px;box-shadow:0 7px 20px rgba(25,18,14,.08);background:#f4ece5}
+.photos em{bottom:8px;left:8px;background:rgba(23,20,17,.72)}
+.preview button{background:#f4ece5!important}
+.preview img{object-fit:contain!important}
+
+.admin-page{background:#f6f0ea}
+.admin-login{background:linear-gradient(180deg,#f6f0ea 0%,#efe4da 100%)}
+.admin-login .card{padding:30px 28px;box-shadow:0 20px 55px rgba(35,25,18,.10)}
+.admin-login-logo{width:82px;height:82px;display:block;margin:0 auto 12px;border:1px solid #c7b29e;border-radius:50%;object-fit:contain;padding:5px;background:#efe2d4}
+.admin-kicker{display:block;font-size:.68rem;letter-spacing:.18em;font-weight:900;color:#8c6c5d;margin-bottom:5px}
+.admin-login h2{font-family:Georgia,"Times New Roman",serif;font-size:2rem;margin:5px 0}
+.admin-site-link{display:inline-block;margin-top:17px;color:#7b665b;text-decoration:none;font-weight:700;font-size:.86rem}
+.admin-nav-brand{display:flex;gap:10px;align-items:center;padding:3px 6px 18px;margin-bottom:5px;border-bottom:1px solid #39312d}
+.admin-nav-brand img{width:42px;height:42px;border-radius:50%;object-fit:contain;padding:3px;background:#efe2d4}
+.admin-nav-brand span{display:grid}.admin-nav-brand small{color:#b9aaa1}.admin-view-site{color:#d7c9c1;text-decoration:none;font-size:.78rem;font-weight:700;margin-top:auto;padding:14px 10px}
+.diary-card{padding:14px!important}
+.diary-date-row{display:flex;justify-content:flex-end;margin-bottom:10px}
+.diary-date-row label{font-size:.72rem;font-weight:800;color:#74675e;display:flex;align-items:center;gap:9px}
+.diary-date-row input{width:auto!important;padding:8px 10px!important;background:#fff}
+.visual-diary{background:#fffaf6!important;color:#241e1a!important;border:1px solid #dfd2c7!important;border-radius:15px!important;box-shadow:0 8px 25px rgba(35,25,18,.05)}
+.diary-toolbar{grid-template-columns:38px 1fr 38px!important;padding:10px 12px!important;border-bottom:1px solid #e3d7cd!important}
+.diary-toolbar button{width:32px!important;height:32px!important;border:1px solid #d6c7bb!important;background:#f3e9e0!important;color:#3b302a!important;font-size:1.25rem!important}
+.diary-toolbar small{color:#8b766a!important}.diary-toolbar h3{font-family:Georgia,"Times New Roman",serif;font-size:1rem!important;color:#241e1a;margin:2px 0 0!important}
+.diary-actions{padding:7px 12px!important;color:#7c6e65!important;border-bottom:1px solid #eee4dc;align-items:center}
+.diary-actions .today-btn{border:1px solid #d7c8bc!important;background:#fff!important;color:#4e4038!important;padding:6px 12px!important}
+.diary-scroll{padding-bottom:5px!important;scrollbar-color:#c8b6aa #f1e8e1!important}
+.diary-scroll::-webkit-scrollbar{height:7px!important}.diary-scroll::-webkit-scrollbar-track{background:#f1e8e1!important}.diary-scroll::-webkit-scrollbar-thumb{background:#c8b6aa!important}
+.timeline-wrap{margin-top:0!important;background:#fffaf6!important}
+.time-axis{width:58px!important;border-right:1px solid #e5dad1!important;background:#fffaf6!important}
+.diary-hour{border-top:1px solid #eadfd7!important}.diary-hour span{top:-9px!important;left:7px!important;background:#fffaf6!important;padding:0 5px 0 0!important;font-size:.68rem!important;color:#86756b!important;font-weight:800!important}
+.appointment-lane{left:58px!important;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 18px,#f0e7e0 19px)!important}
+.diary-appt{border-radius:8px!important;padding:6px 8px!important;box-shadow:0 3px 10px rgba(40,28,20,.08);border:1px solid rgba(80,60,50,.10)!important}
+.diary-appt b{font-size:.74rem!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.diary-appt span{font-size:.7rem!important;margin-top:2px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.diary-appt small{font-size:.62rem!important;display:block;margin-top:2px}
+.diary-tone-0{background:#ead9d1!important}.diary-tone-1{background:#e4d9e1!important}.diary-tone-2{background:#dce4d7!important}.diary-tone-3{background:#eadfca!important}.no-day-bookings{color:#8f8077!important;padding:22px!important}
+@media(max-width:700px){.dashboard article{padding:12px!important}.diary-card{padding:9px!important}.diary-date-row{justify-content:stretch}.diary-date-row label{width:100%;justify-content:space-between}.photos{grid-template-columns:1fr 1fr}}

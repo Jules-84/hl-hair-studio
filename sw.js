@@ -1,10 +1,11 @@
-const CACHE="hl-hair-studio-v24-cloud-6";
+const CACHE="hl-hair-studio-v25-polish-1";
 
 const STATIC=[
   "./",
   "./index.html",
   "./styles.css",
-  "./manifest.json"
+  "./manifest.json",
+  "./admin/"
 ];
 
 self.addEventListener("install",event=>{
