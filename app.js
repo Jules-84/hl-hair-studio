@@ -321,8 +321,34 @@ function renderDiary(){
  if(!/^\d{4}-\d{2}-\d{2}$/.test(date))date=today();
  window.diaryDate=date;if(dateInput&&dateInput.value!==date)dateInput.value=date;
  const bookings=S.bookings.filter(b=>b.date===date&&b.status!=="cancelled").sort((a,b)=>a.time.localeCompare(b.time));
- const start=8*60,end=20*60,ppm=.64,height=(end-start)*ppm;
+ const isPhone=window.matchMedia&&window.matchMedia("(max-width: 700px)").matches;
 
+ if(isPhone){
+   const cards=bookings.map(x=>{
+     const [h,m]=x.time.split(":").map(Number),d=Number(x.duration||60),en=h*60+m+d,eh=Math.floor(en/60),em=en%60;
+     const depositClass=!Number(x.deposit)?"deposit-none":(x.depositPaid?"deposit-paid":"deposit-due");
+     const depositLabel=!Number(x.deposit)?"No deposit":(x.depositPaid?`✓ £${x.deposit} paid`:`£${x.deposit} due`);
+     const statusLabel={confirmed:"Booked",arrived:"Arrived",completed:"Completed",no_show:"No-show",cancelled:"Cancelled"}[x.status||"confirmed"]||"Booked";
+     return `<button class="mobile-diary-appt ${depositClass}" onclick="openDiaryBooking('${x.id}')">
+       <span class="mobile-appt-time">${x.time}<small>to ${eh}:${String(em).padStart(2,"0")}</small></span>
+       <span class="mobile-appt-main"><b>${esc(x.name)}</b><span>${esc(x.serviceName||x.service||"Appointment")}${x.pinCurls?" · Pin Curls":""}</span><small>${depositLabel}</small></span>
+       <span class="mobile-appt-status status-${x.status||"confirmed"}">${statusLabel}</span>
+       <span class="mobile-appt-arrow">›</span>
+     </button>`;
+   }).join("");
+   el.innerHTML=`<div class="visual-diary mobile-diary">
+     <div class="diary-toolbar">
+       <button aria-label="Previous day" onclick="diaryMove(-1)">‹</button>
+       <div><small>APPOINTMENTS</small><h3>${nice(date)}</h3></div>
+       <button aria-label="Next day" onclick="diaryMove(1)">›</button>
+     </div>
+     <div class="diary-actions"><button class="today-btn" onclick="diaryToday()">Today</button><span>${bookings.length} appointment${bookings.length===1?"":"s"}</span></div>
+     <div class="mobile-diary-list">${cards||'<div class="no-day-bookings">No appointments booked for this day.</div>'}</div>
+   </div>`;
+   return;
+ }
+
+ const start=8*60,end=20*60,ppm=.64,height=(end-start)*ppm;
  let hours="";
  for(let h=8;h<=20;h++){
    const label=h===12?"12 pm":h>12?`${h-12} pm`:`${h} am`;
@@ -337,7 +363,7 @@ function renderDiary(){
  });
  const maxCols=Math.max(1,...laid.map(x=>x.col+1));
  const colWidth=220,gap=8;
- const cards=laid.map((item,i)=>{
+ const cards=laid.map(item=>{
    const x=item.booking,st=item.start,d=Number(x.duration||60),en=item.end;
    const eh=Math.floor(en/60),em=en%60,left=8+item.col*(colWidth+gap);
    const depositClass=!Number(x.deposit)?"deposit-none":(x.depositPaid?"deposit-paid":"deposit-due");
