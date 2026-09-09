@@ -23,7 +23,8 @@
     deposit:Number(r.deposit),
     depositPaid:!!r.deposit_paid,
     pinCurls:!!r.pin_curls,
-    status:r.status||"confirmed"
+    status:r.status||"confirmed",
+    bookingRef:r.booking_ref||""
   });
 
   const mapBlock=r=>({
@@ -33,6 +34,120 @@
     end:String(r.end_time||"").slice(0,5),
     reason:r.reason||"Unavailable"
   });
+
+
+
+  const mapGallery=r=>({
+    id:String(r.id),
+    src:r.image_url,
+    label:r.label||"Hair style",
+    storagePath:r.storage_path||"",
+    sortOrder:Number(r.sort_order||0)
+  });
+
+  async function fetchSiteConfig(){
+    if(!client)return null;
+    const {data,error}=await client
+      .from("site_config")
+      .select("id,business_name,tagline,services")
+      .eq("id",1)
+      .maybeSingle();
+    if(error)throw error;
+    if(!data)return null;
+    return {
+      settings:{name:data.business_name||"Hair Studio",tag:data.tagline||""},
+      services:Array.isArray(data.services)?data.services:[]
+    };
+  }
+
+  async function saveSiteConfig({services,settings}){
+    if(!client)return {localOnly:true};
+    const payload={
+      id:1,
+      business_name:settings?.name||"Hair Studio",
+      tagline:settings?.tag||"",
+      services:Array.isArray(services)?services:[],
+      updated_at:new Date().toISOString()
+    };
+    const {error}=await client.from("site_config").upsert(payload,{onConflict:"id"});
+    if(error)throw error;
+    return true;
+  }
+
+  async function fetchGallery(){
+    if(!client)return null;
+    const {data,error}=await client
+      .from("gallery_items")
+      .select("id,label,image_url,storage_path,sort_order")
+      .order("sort_order",{ascending:true})
+      .order("created_at",{ascending:true});
+    if(error)throw error;
+    return (data||[]).map(mapGallery);
+  }
+
+  async function uploadGalleryImage(id,file){
+    if(!client)return null;
+    const ext=(file.type||"image/jpeg").includes("png")?"png":"jpg";
+    const path=`${String(id).replace(/[^a-zA-Z0-9_-]/g,"_")}/${Date.now()}.${ext}`;
+    const {error}=await client.storage.from("gallery").upload(path,file,{
+      cacheControl:"3600",
+      upsert:false,
+      contentType:file.type||"image/jpeg"
+    });
+    if(error)throw error;
+    const {data}=client.storage.from("gallery").getPublicUrl(path);
+    return {path,url:data.publicUrl};
+  }
+
+  async function addGalleryItem(item,file){
+    if(!client)return {localOnly:true,item};
+    const uploaded=await uploadGalleryImage(item.id,file);
+    try{
+      const {data,error}=await client.from("gallery_items").insert({
+        id:String(item.id),
+        label:item.label,
+        image_url:uploaded.url,
+        storage_path:uploaded.path,
+        sort_order:Number(item.sortOrder||0)
+      }).select("id,label,image_url,storage_path,sort_order").single();
+      if(error)throw error;
+      return mapGallery(data);
+    }catch(e){
+      await client.storage.from("gallery").remove([uploaded.path]).catch(()=>{});
+      throw e;
+    }
+  }
+
+  async function updateGalleryItem(id,{label,file,oldStoragePath,sortOrder}){
+    if(!client)return {localOnly:true};
+    let uploaded=null;
+    if(file)uploaded=await uploadGalleryImage(id,file);
+    const payload={};
+    if(label!==undefined)payload.label=label;
+    if(sortOrder!==undefined)payload.sort_order=Number(sortOrder||0);
+    if(uploaded){payload.image_url=uploaded.url;payload.storage_path=uploaded.path;}
+    try{
+      const {data,error}=await client.from("gallery_items")
+        .update(payload).eq("id",String(id))
+        .select("id,label,image_url,storage_path,sort_order").single();
+      if(error)throw error;
+      if(uploaded&&oldStoragePath&&oldStoragePath!==uploaded.path){
+        await client.storage.from("gallery").remove([oldStoragePath]).catch(()=>{});
+      }
+      return mapGallery(data);
+    }catch(e){
+      if(uploaded)await client.storage.from("gallery").remove([uploaded.path]).catch(()=>{});
+      throw e;
+    }
+  }
+
+  async function deleteGalleryItem(item){
+    if(!client)return {localOnly:true};
+    const {error}=await client.from("gallery_items").delete().eq("id",String(item.id));
+    if(error)throw error;
+    if(item.storagePath)await client.storage.from("gallery").remove([item.storagePath]).catch(()=>{});
+    return true;
+  }
 
   async function createBooking(b){
     if(!client)return {localOnly:true,booking:b};
@@ -52,7 +167,8 @@
       deposit:b.deposit,
       deposit_paid:!!b.depositPaid,
       pin_curls:!!b.pinCurls,
-      status:b.status||"confirmed"
+      status:b.status||"confirmed",
+      booking_ref:b.bookingRef||null
     };
 
     const {error}=await client.from("bookings").insert(payload);
@@ -71,6 +187,34 @@
       time:String(x.appointment_time||"").slice(0,5),
       duration:Number(x.duration)
     }));
+  }
+
+  async function customerGetBookings(email,phone){
+    if(!client)return [];
+    const {data,error}=await client.rpc("customer_get_bookings",{p_email:String(email||"").trim().toLowerCase(),p_phone:String(phone||"")});
+    if(error)throw error;
+    return (data||[]).map(mapBooking);
+  }
+
+  async function customerRescheduleBusySlots(date,bookingId,email,phone){
+    if(!client)return [];
+    const {data,error}=await client.rpc("customer_reschedule_busy_slots",{p_date:date,p_booking_id:bookingId,p_email:String(email||"").trim().toLowerCase(),p_phone:String(phone||"")});
+    if(error)throw error;
+    return (data||[]).map(x=>({time:String(x.appointment_time||"").slice(0,5),duration:Number(x.duration)}));
+  }
+
+  async function customerRescheduleBooking(bookingId,email,phone,date,time){
+    if(!client)throw new Error("Online booking management is unavailable");
+    const {data,error}=await client.rpc("customer_reschedule_booking",{
+      p_booking_id:bookingId,
+      p_email:String(email||"").trim().toLowerCase(),
+      p_phone:String(phone||""),
+      p_date:date,
+      p_time:time
+    });
+    if(error)throw error;
+    const row=Array.isArray(data)?data[0]:data;
+    return row?mapBooking(row):null;
   }
 
   async function adminLogin(pin){
@@ -288,6 +432,9 @@
     enabled:()=>!!client,
     createBooking,
     createAdminBooking:createBooking,
+    customerGetBookings,
+    customerRescheduleBusySlots,
+    customerRescheduleBooking,
     busySlots,
     adminLogin,
     changeAdminPin,
@@ -299,6 +446,12 @@
     saveAvailability,
     fetchBlockedTimes,
     addBlockedTime,
-    deleteBlockedTime
+    deleteBlockedTime,
+    fetchSiteConfig,
+    saveSiteConfig,
+    fetchGallery,
+    addGalleryItem,
+    updateGalleryItem,
+    deleteGalleryItem
   };
 })();
