@@ -540,3 +540,20 @@ header{
   .mobile-diary-appt{grid-template-columns:52px minmax(0,1fr) 14px}.mobile-appt-status{grid-column:2;justify-self:start}.mobile-appt-arrow{grid-column:3;grid-row:1/3}.mobile-appt-time{font-size:1rem}
   .stats b{font-size:1.05rem}.stats small{font-size:.6rem}
 }
+\n\n/* ===== v31.5 phone-friendly timeline diary ===== */
+@media(max-width:700px){
+  .phone-timeline{border-radius:0!important}
+  .phone-timeline .diary-toolbar{position:sticky;top:60px;z-index:12;padding:9px 10px!important;background:#fffaf6!important}
+  .phone-timeline .diary-toolbar button{width:42px!important;height:42px!important;font-size:1.55rem!important}
+  .phone-timeline .diary-toolbar h3{font-size:1rem!important}
+  .phone-timeline .diary-actions{position:sticky;top:112px;z-index:11;padding:7px 10px!important;background:#fffaf6!important}
+  .phone-timeline .today-btn{min-height:38px;padding:7px 14px!important}
+  .phone-timeline .diary-scroll{max-height:68vh;overflow:auto!important;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;background:#fffaf6}
+  .phone-timeline .timeline-wrap{min-width:308px!important;background:#fffaf6!important}
+  .phone-timeline .time-axis{position:sticky;left:0;z-index:6;width:52px;background:#fffaf6}
+  .phone-timeline .appointment-lane{margin-left:52px!important}
+  .phone-timeline .diary-hour span{position:sticky;left:6px;z-index:7;width:44px;font-size:.7rem!important;background:#fffaf6!important}
+  .phone-timeline .diary-appt{padding:7px 8px!important;border-radius:9px!important;min-height:38px;touch-action:manipulation}
+  .phone-timeline .diary-appt b{font-size:.76rem!important}.phone-timeline .diary-appt span{font-size:.7rem!important}
+  .phone-timeline .appt-status{font-size:.58rem!important;padding:2px 5px!important}
+}
