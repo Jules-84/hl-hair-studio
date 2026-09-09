@@ -1,4 +1,4 @@
-const CACHE="hl-hair-studio-v27-admin-override-1";
+const CACHE="hl-hair-studio-v28-appointment-status-1";
 
 const STATIC=[
   "./",

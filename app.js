@@ -90,7 +90,7 @@ function pickCategory(cat){W.category=cat;W.step=2;bookRender()}
 function pinCurlStep(){let x=W.service;$("#bookbody").innerHTML=`<div class="bookcard addon-step"><span class="eyebrow-small">${esc(x.name)}</span><h2>Would you like to add pin curls?</h2><p class="category-help">Choose an option before selecting your appointment date.</p><div class="pin-options"><button class="pin-option" onclick="choosePinCurls(false)"><div><b>No thanks</b><small>Continue with ${esc(x.name)}</small></div><strong>£${x.price}</strong></button><button class="pin-option featured-addon" onclick="choosePinCurls(true)"><div><b>Add Pin Curls</b><small>Add pin curls to your blow dry</small></div><strong>+£2</strong></button></div></div>`}
 function choosePinCurls(v){W.pinCurls=!!v;W.step=4;bookRender()}
 function pickService(id){W.service=S.services.find(x=>x.id===id);W.category=W.service.category;W.pinCurls=false;W.step=supportsPinCurls(W.service)?3:4;bookRender()} function dateStep(){let out=[],d=new Date();for(let i=0;i<42;i++){let x=new Date(d);x.setDate(d.getDate()+i);if(!S.hours[x.getDay()].open)continue;let iso=x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0");out.push(`<button class="choice" onclick="pickDate('${iso}')">${x.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})}</button>`)}$("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a date</h2><p>${esc(W.service.name)}</p><div class="dates">${out.join("")}</div></div>`} async function pickDate(d){W.date=d;W.cloudBusy=[];if(window.CloudDB?.enabled()){try{await syncCloudAvailability(false);W.cloudBusy=await CloudDB.busySlots(d)}catch(e){console.error(e);return toast("Could not check online availability")}}W.step=5;bookRender()}
-function overlap(t,d,b,bd){return mins(t)<mins(b)+bd&&mins(b)<mins(t)+d} function slots(){let h=S.hours[new Date(W.date+"T12:00").getDay()],o=[];for(let m=mins(h.start);m+W.service.duration<=mins(h.end);m+=30){let t=ts(m),busy=S.bookings.some(b=>b.status!=="cancelled"&&b.date===W.date&&overlap(t,W.service.duration,b.time,b.duration)),cloud=(W.cloudBusy||[]).some(b=>overlap(t,W.service.duration,b.time,b.duration)),block=S.blocks.some(b=>b.date===W.date&&overlap(t,W.service.duration,b.start,mins(b.end)-mins(b.start)));if(!busy&&!cloud&&!block)o.push(t)}return o} function timeStep(){$("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a time</h2><p>${nice(W.date)}</p><div class="times">${slots().map(t=>`<button class="choice" onclick="pickTime('${t}')">${t}</button>`).join("")||"No times available"}</div></div>`} function pickTime(t){W.time=t;W.step=6;bookRender()}
+function overlap(t,d,b,bd){return mins(t)<mins(b)+bd&&mins(b)<mins(t)+d} function bookingBlocksTime(b){return !["cancelled","no_show"].includes(b.status||"confirmed")} function slots(){let h=S.hours[new Date(W.date+"T12:00").getDay()],o=[];for(let m=mins(h.start);m+W.service.duration<=mins(h.end);m+=30){let t=ts(m),busy=S.bookings.some(b=>bookingBlocksTime(b)&&b.date===W.date&&overlap(t,W.service.duration,b.time,b.duration)),cloud=(W.cloudBusy||[]).some(b=>overlap(t,W.service.duration,b.time,b.duration)),block=S.blocks.some(b=>b.date===W.date&&overlap(t,W.service.duration,b.start,mins(b.end)-mins(b.start)));if(!busy&&!cloud&&!block)o.push(t)}return o} function timeStep(){$("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a time</h2><p>${nice(W.date)}</p><div class="times">${slots().map(t=>`<button class="choice" onclick="pickTime('${t}')">${t}</button>`).join("")||"No times available"}</div></div>`} function pickTime(t){W.time=t;W.step=6;bookRender()}
 function details(){
  let x=W.service,total=x.price+(W.pinCurls?2:0),dep=depositFor(x),remaining=Math.max(0,total-dep);
  $("#bookbody").innerHTML=`<div class="bookcard"><h2>Your details</h2>
@@ -167,7 +167,7 @@ function adminOpen(){const customer=$("#customer"),header=$("header"),admin=$("#
 function adminClose(){if(document.body?.dataset.page==="admin"){location.href="/";return}const admin=$("#admin"),customer=$("#customer"),header=$("header");if(admin)admin.classList.add("hide");if(customer)customer.classList.remove("hide");if(header)header.classList.remove("hide");home()}
 async function login(){let pin=$("#pin").value;if(window.CloudDB?.enabled()){try{await CloudDB.adminLogin(pin);S.settings.pin=String(pin);save()}catch(e){console.error(e);return toast("Incorrect admin PIN")}}else if(pin!==S.settings.pin){return toast("Incorrect PIN")}authed=true;$("#login").classList.add("hide");$("#dash").classList.remove("hide");await syncAdminBookings();await syncCloudAvailability(true);adminRender()}
 async function tab(id){$$(".tab").forEach(x=>x.classList.add("hide"));$("#"+id).classList.remove("hide");await syncAdminBookings();await syncCloudAvailability(false);adminRender()}
-function adminRender(){if(!authed)return;let active=S.bookings.filter(b=>b.status!=="cancelled"),d=today();const tc=$("#todayCount"),uc=$("#upcomingCount"),rev=$("#revenue"),dd=$("#diaryDate");if(tc)tc.textContent=active.filter(b=>b.date===d).length;if(uc)uc.textContent=active.filter(b=>b.date>=d).length;if(rev)rev.textContent="£"+active.filter(b=>b.date>=d).reduce((a,b)=>a+b.price,0);if(dd&&!dd.value)dd.value=d;renderDiary();renderCustomers();renderServiceAdmin();renderGalleryAdmin();renderHours();renderBlocks();const bn=$("#businessName"),tg=$("#tagline"),ap=$("#adminPin");if(bn)bn.value=S.settings.name;if(tg)tg.value=S.settings.tag;if(ap)ap.value=S.settings.pin}
+function adminRender(){if(!authed)return;let active=S.bookings.filter(b=>bookingBlocksTime(b)),d=today();const tc=$("#todayCount"),uc=$("#upcomingCount"),rev=$("#revenue"),dd=$("#diaryDate");if(tc)tc.textContent=active.filter(b=>b.date===d).length;if(uc)uc.textContent=active.filter(b=>b.date>=d).length;if(rev)rev.textContent="£"+active.filter(b=>b.date>=d).reduce((a,b)=>a+b.price,0);if(dd&&!dd.value)dd.value=d;renderDiary();renderCustomers();renderServiceAdmin();renderGalleryAdmin();renderHours();renderBlocks();const bn=$("#businessName"),tg=$("#tagline"),ap=$("#adminPin");if(bn)bn.value=S.settings.name;if(tg)tg.value=S.settings.tag;if(ap)ap.value=S.settings.pin}
 function diaryIso(d){
  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 }
@@ -199,9 +199,11 @@ function renderDiary(){
    const eh=Math.floor(en/60),em=en%60,left=8+item.col*(colWidth+gap);
    const depositClass=!Number(x.deposit)?"deposit-none":(x.depositPaid?"deposit-paid":"deposit-due");
    const depositLabel=!Number(x.deposit)?"No deposit":(x.depositPaid?`✓ £${x.deposit} deposit paid`:`£${x.deposit} deposit due`);
+   const statusLabel={confirmed:"Booked",arrived:"Arrived",completed:"Completed",no_show:"No-show",cancelled:"Cancelled"}[x.status||"confirmed"]||"Booked";
    return `<button class="diary-appt ${depositClass}" style="top:${Math.max(0,(st-start)*ppm)}px;height:${Math.max(38,d*ppm)}px;left:${left}px;width:${colWidth}px" onclick="openDiaryBooking('${x.id}')">
       <b>${x.time} – ${eh}:${String(em).padStart(2,"0")} · ${esc(x.name)}</b>
       <span>${esc(x.serviceName||x.service||"Appointment")}${x.pinCurls?" · Pin Curls":""}</span>
+      <em class="appt-status status-${x.status||"confirmed"}">${statusLabel}</em>
       ${d>=45?`<small>${depositLabel}</small>`:""}
    </button>`;
  }).join("");
@@ -235,7 +237,25 @@ function openDiaryBooking(id){
  const depositHtml=Number(b.deposit)>0
    ? `<label class="deposit-paid-control ${b.depositPaid?"is-paid":"is-due"}"><input type="checkbox" ${b.depositPaid?"checked":""} onchange="setDepositPaid('${b.id}',this.checked)"><span><b>${b.depositPaid?"Deposit paid":"Deposit still due"}</b><small>£${b.deposit} deposit</small></span></label>`
    : `<div class="deposit-no-payment">No deposit required</div>`;
- modal(`<h2>${esc(b.name)}</h2><div class="summary"><b>${esc(b.serviceName||b.service||"Appointment")}</b>${b.pinCurls?"<br>+ Pin Curls":""}<br>${nice(b.date)} at ${b.time}<br>${esc(b.phone||"")}${b.email?`<br>${esc(b.email)}`:""}${b.notes?`<br><br>Notes: ${esc(b.notes)}`:""}</div>${depositHtml}`);
+ const status=b.status||"confirmed";
+ const statusHtml=`<div class="appointment-status-control"><label>Appointment status<select onchange="setAppointmentStatus('${b.id}',this.value)"><option value="confirmed" ${status==="confirmed"?"selected":""}>Booked</option><option value="arrived" ${status==="arrived"?"selected":""}>Arrived</option><option value="completed" ${status==="completed"?"selected":""}>Completed</option><option value="no_show" ${status==="no_show"?"selected":""}>No-show</option><option value="cancelled" ${status==="cancelled"?"selected":""}>Cancelled</option></select></label></div>`;
+ modal(`<h2>${esc(b.name)}</h2><div class="summary"><b>${esc(b.serviceName||b.service||"Appointment")}</b>${b.pinCurls?"<br>+ Pin Curls":""}<br>${nice(b.date)} at ${b.time}<br>${esc(b.phone||"")}${b.email?`<br>${esc(b.email)}`:""}${b.notes?`<br><br>Notes: ${esc(b.notes)}`:""}</div>${statusHtml}${depositHtml}`);
+}
+
+async function setAppointmentStatus(id,status){
+ const b=S.bookings.find(x=>x.id===id);if(!b)return;
+ const allowed=["confirmed","arrived","completed","no_show","cancelled"];
+ if(!allowed.includes(status))return;
+ const previous=b.status||"confirmed";
+ b.status=status;save();renderDiary();
+ try{
+   if(window.CloudDB?.enabled())await CloudDB.updateBookingStatus(id,status);
+   toast({confirmed:"Marked as booked",arrived:"Marked as arrived",completed:"Marked as completed",no_show:"Marked as no-show",cancelled:"Appointment cancelled"}[status]||"Status updated");
+   if(status==="cancelled")closeModal();else openDiaryBooking(id);
+   adminRender();
+ }catch(e){
+   console.error(e);b.status=previous;save();adminRender();openDiaryBooking(id);toast("Could not update appointment status online");
+ }
 }
 async function setDepositPaid(id,paid){
  const b=S.bookings.find(x=>x.id===id);if(!b)return;
@@ -260,7 +280,7 @@ async function manualSave(){
   let x=S.services.find(s=>s.id===$("#ms").value),booking={id:uid(),name:$("#mn").value||"Customer",phone:$("#mp").value,notes:$("#mnotes").value,email:"",serviceId:x.id,serviceName:x.name,date:$("#md").value,time:$("#mt").value,duration:x.duration,price:x.price,basePrice:x.price,deposit:depositFor(x),depositPaid:false,pinCurls:false,status:"confirmed"};
   if(!booking.date||!booking.time)return toast("Choose a date and time");
 
-  const clashes=S.bookings.filter(b=>b.status!=="cancelled"&&b.date===booking.date&&overlap(booking.time,booking.duration,b.time,Number(b.duration||60)));
+  const clashes=S.bookings.filter(b=>bookingBlocksTime(b)&&b.date===booking.date&&overlap(booking.time,booking.duration,b.time,Number(b.duration||60)));
   const blocked=S.blocks.filter(b=>b.date===booking.date&&overlap(booking.time,booking.duration,b.start,mins(b.end)-mins(b.start)));
   const dow=new Date(booking.date+"T12:00").getDay(),h=S.hours[dow];
   const outsideHours=!h?.open||mins(booking.time)<mins(h.start)||mins(booking.time)+booking.duration>mins(h.end);

@@ -110,6 +110,21 @@
   }
 
 
+
+  async function updateBookingStatus(id,status){
+    if(!client)return {localOnly:true};
+    const allowed=["confirmed","arrived","completed","no_show","cancelled"];
+    if(!allowed.includes(status))throw new Error("Invalid appointment status");
+    const {data,error}=await client
+      .from("bookings")
+      .update({status})
+      .eq("id",id)
+      .select("id,status")
+      .single();
+    if(error)throw error;
+    return {id:data.id,status:data.status};
+  }
+
   async function updateDepositPaid(id,paid){
     if(!client)return {localOnly:true};
 
@@ -278,6 +293,7 @@
     changeAdminPin,
     fetchBookings,
     updateDepositPaid,
+    updateBookingStatus,
     cancelBooking,
     fetchAvailability,
     saveAvailability,
