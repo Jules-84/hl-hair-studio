@@ -1,4 +1,4 @@
-const CACHE="hl-hair-studio-v31-2-pin-reset-1";
+const CACHE="hl-hair-studio-v31-3-booking-fix-1";
 
 const STATIC=[
   "./",

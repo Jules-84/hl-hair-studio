@@ -12,6 +12,7 @@ S.gallery=S.gallery.map((g,i)=>({id:g.id||("g"+Date.now()+i),src:g.src,label:g.l
 save();
 
 const esc=x=>String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+const bookingRef=()=>"HL"+Date.now().toString(36).toUpperCase()+Math.random().toString(36).slice(2,6).toUpperCase();
 const today=()=>{let d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}, mins=t=>{let a=t.split(":").map(Number);return a[0]*60+a[1]}, ts=m=>String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0"), uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 function nice(d){return new Date(d+"T12:00").toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})} function toast(x){let t=$("#toast");t.textContent=x;t.style.display="block";setTimeout(()=>t.style.display="none",1800)}
 
