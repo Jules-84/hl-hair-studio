@@ -124,7 +124,8 @@ function dateStep(){
     const label=x.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
     out.push(`<button class="choice" onclick="pickDate('${iso}')">${label}</button>`);
   }
-  $("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a date</h2><p>${esc(W.service.name)}</p><div class="dates">${out.join("")}</div></div>`;
+  const lastMinuteNote=`<div class="deposit-notice" style="margin-top:16px"><b>Need an appointment within the next 24 hours?</b><br><span>Online bookings close 24 hours before each appointment time, but I may still have last-minute availability. Choose your date and look for <b>â€œTap to contactâ€</b> on the available times, or contact me directly and Iâ€™ll do my best to accommodate you.</span></div>`;
+  $("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a date</h2><p>${esc(W.service.name)}</p><div class="dates">${out.join("")}</div>${lastMinuteNote}</div>`;
 }
 async function pickDate(d){
   W.date=d;W.cloudBusy=[];
@@ -136,7 +137,7 @@ function bookingBlocksTime(b){return !["cancelled","no_show"].includes(b.status|
 function slots(){let h=S.hours[new Date(W.date+"T12:00").getDay()],o=[];for(let m=mins(h.start);m+W.service.duration<=mins(h.end);m+=30){let t=ts(m),busy=S.bookings.some(b=>bookingBlocksTime(b)&&b.date===W.date&&overlap(t,W.service.duration,b.time,b.duration)),cloud=(W.cloudBusy||[]).some(b=>overlap(t,W.service.duration,b.time,b.duration)),block=S.blocks.some(b=>b.date===W.date&&overlap(t,W.service.duration,b.start,mins(b.end)-mins(b.start)));if(!busy&&!cloud&&!block)o.push(t)}return o}
 function timeStep(){
   const available=slots();
-  const buttons=available.map(t=>within24Hours(W.date,t)?`<button class="choice cutoff-date" onclick="lastMinuteContactMessage('${W.date}','${t}')"><span>${t}</span><small style="display:block;margin-top:4px">Contact me</small></button>`:`<button class="choice" onclick="pickTime('${t}')">${t}</button>`).join("");
+  const buttons=available.map(t=>within24Hours(W.date,t)?`<button class="choice cutoff-date" onclick="lastMinuteContactMessage('${W.date}','${t}')"><span>${t}</span><small style="display:block;margin-top:4px"><b>Last-minute</b><br>Tap to contact</small></button>`:`<button class="choice" onclick="pickTime('${t}')">${t}</button>`).join("");
   $("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a time</h2><p>${nice(W.date)}</p><div class="times">${buttons||"No times available"}</div></div>`;
 }
 function pickTime(t){if(within24Hours(W.date,t)){lastMinuteContactMessage(W.date,t);return}W.time=t;W.step=6;bookRender()}
