@@ -124,7 +124,7 @@ function dateStep(){
     const label=x.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
     out.push(`<button class="choice" onclick="pickDate('${iso}')">${label}</button>`);
   }
-  const lastMinuteNote=`<div class="deposit-notice" style="margin-top:16px"><b>Need an appointment within the next 24 hours?</b><br><span>Online bookings close 24 hours before each appointment time, but I may still have last-minute availability. Choose your date and look for <b>â€œTap to contactâ€</b> on the available times, or contact me directly and Iâ€™ll do my best to accommodate you.</span></div>`;
+  const lastMinuteNote=`<div class="deposit-notice" style="margin-top:16px"><b>Need an appointment within the next 24 hours?</b><br><span>Online bookings close 24 hours before each appointment time, but I may still have last-minute availability. Choose your date and look for <b> Tap to contact </b> on the available times, or contact me directly and I'll do my best to accommodate you.</span></div>`;
   $("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a date</h2><p>${esc(W.service.name)}</p><div class="dates">${out.join("")}</div>${lastMinuteNote}</div>`;
 }
 async function pickDate(d){
