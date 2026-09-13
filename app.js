@@ -22,7 +22,7 @@ function categoryMarkup(clickFn="startService"){
  return CATEGORY_ORDER.map(cat=>{
    let items=S.services.filter(s=>s.category===cat);
    if(!items.length)return "";
-   return `<section class="service-category"><div class="category-title"><h3>${esc(cat)}</h3><span>${items.length} service${items.length===1?"":"s"}</span></div><div class="category-items">${items.map(x=>`<div class="service" onclick="${clickFn}('${x.id}')"><div><b>${esc(x.name)}</b><small>${durationText(x.duration)}${x.note?` · ${esc(x.note)}`:""}</small></div><b>${x.price===0?"Free":"£"+x.price}</b></div>`).join("")}</div></section>`;
+   return `<section class="service-category"><div class="category-title"><h3>${esc(cat)}</h3><span>${items.length} service${items.length===1?"":"s"}</span></div><div class="category-items">${items.map(x=>`<div class="service" onclick="${clickFn}('${x.id}')"><div><b>${esc(x.name)}</b><small>${durationText(x.duration)}${x.note?` Ã‚Â· ${esc(x.note)}`:""}</small></div><b>${x.price===0?"Free":"Ã‚Â£"+x.price}</b></div>`).join("")}</div></section>`;
  }).join("");
 }
 
@@ -84,26 +84,58 @@ function bookRender(){
  let shown=(!blow&&W.step>=4)?W.step-1:W.step;
  $("#step").textContent=shown+" / "+total;$("#progress").style.width=(shown/total*100)+"%";
  if(W.step===1){bookingBack();return}
- if(false)$("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a category</h2><p class="category-help">What would you like to book?</p><div class="book-category-grid">${CATEGORY_ORDER.map(cat=>`<button class="book-category-card" onclick="pickCategory('${cat.replace(/'/g,"\\'")}')"><span>${esc(cat)}</span><b>›</b></button>`).join("")}</div></div>`;
+ if(false)$("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a category</h2><p class="category-help">What would you like to book?</p><div class="book-category-grid">${CATEGORY_ORDER.map(cat=>`<button class="book-category-card" onclick="pickCategory('${cat.replace(/'/g,"\\'")}')"><span>${esc(cat)}</span><b>Ã¢â‚¬Âº</b></button>`).join("")}</div></div>`;
  if(W.step===2){bookingBack();return}
- if(false){let items=S.services.filter(s=>s.category===W.category);$("#bookbody").innerHTML=`<div class="bookcard"><span class="eyebrow-small">${esc(W.category)}</span><h2>Choose a service</h2><div class="choices">${items.map(x=>`<button class="choice service-choice" onclick="pickService('${x.id}')"><span><b>${esc(x.name)}</b><small>${durationText(x.duration)}${x.note?` · ${esc(x.note)}`:""}${supportsPinCurls(x)?" · Pin curls +£2 optional":""}</small></span><strong>${x.price===0?"Free":"£"+x.price}</strong></button>`).join("")}</div></div>`}
+ if(false){let items=S.services.filter(s=>s.category===W.category);$("#bookbody").innerHTML=`<div class="bookcard"><span class="eyebrow-small">${esc(W.category)}</span><h2>Choose a service</h2><div class="choices">${items.map(x=>`<button class="choice service-choice" onclick="pickService('${x.id}')"><span><b>${esc(x.name)}</b><small>${durationText(x.duration)}${x.note?` Ã‚Â· ${esc(x.note)}`:""}${supportsPinCurls(x)?" Ã‚Â· Pin curls +Ã‚Â£2 optional":""}</small></span><strong>${x.price===0?"Free":"Ã‚Â£"+x.price}</strong></button>`).join("")}</div></div>`}
  if(W.step===3)pinCurlStep();if(W.step===4)dateStep();if(W.step===5)timeStep();if(W.step===6)details()
 }
 function pickCategory(cat){W.category=cat;W.step=2;bookRender()}
-function pinCurlStep(){let x=W.service;$("#bookbody").innerHTML=`<div class="bookcard addon-step"><span class="eyebrow-small">${esc(x.name)}</span><h2>Would you like to add pin curls?</h2><p class="category-help">Choose an option before selecting your appointment date.</p><div class="pin-options"><button class="pin-option" onclick="choosePinCurls(false)"><div><b>No thanks</b><small>Continue with ${esc(x.name)}</small></div><strong>£${x.price}</strong></button><button class="pin-option featured-addon" onclick="choosePinCurls(true)"><div><b>Add Pin Curls</b><small>Add pin curls to your blow dry</small></div><strong>+£2</strong></button></div></div>`}
+function pinCurlStep(){let x=W.service;$("#bookbody").innerHTML=`<div class="bookcard addon-step"><span class="eyebrow-small">${esc(x.name)}</span><h2>Would you like to add pin curls?</h2><p class="category-help">Choose an option before selecting your appointment date.</p><div class="pin-options"><button class="pin-option" onclick="choosePinCurls(false)"><div><b>No thanks</b><small>Continue with ${esc(x.name)}</small></div><strong>Ã‚Â£${x.price}</strong></button><button class="pin-option featured-addon" onclick="choosePinCurls(true)"><div><b>Add Pin Curls</b><small>Add pin curls to your blow dry</small></div><strong>+Ã‚Â£2</strong></button></div></div>`}
 function choosePinCurls(v){W.pinCurls=!!v;W.step=4;bookRender()}
-function pickService(id){W.service=S.services.find(x=>x.id===id);W.category=W.service.category;W.pinCurls=false;W.step=supportsPinCurls(W.service)?3:4;bookRender()} function dateStep(){let out=[],d=new Date();for(let i=0;i<42;i++){let x=new Date(d);x.setDate(d.getDate()+i);if(!S.hours[x.getDay()].open)continue;let iso=x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0");out.push(`<button class="choice" onclick="pickDate('${iso}')">${x.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})}</button>`)}$("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a date</h2><p>${esc(W.service.name)}</p><div class="dates">${out.join("")}</div></div>`} async function pickDate(d){W.date=d;W.cloudBusy=[];if(window.CloudDB?.enabled()){try{await syncCloudAvailability(false);W.cloudBusy=await CloudDB.busySlots(d)}catch(e){console.error(e);return toast("Could not check online availability")}}W.step=5;bookRender()}
+function pickService(id){W.service=S.services.find(x=>x.id===id);W.category=W.service.category;W.pinCurls=false;W.step=supportsPinCurls(W.service)?3:4;bookRender()}
+
+function ukBookingNow(){
+  const parts=new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/London",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date());
+  const v=Object.fromEntries(parts.filter(x=>x.type!=="literal").map(x=>[x.type,x.value]));
+  return {date:`${v.year}-${v.month}-${v.day}`,hour:Number(v.hour),minute:Number(v.minute)};
+}
+function addIsoDays(iso,days){
+  const d=new Date(iso+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+days);
+  return d.getUTCFullYear()+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-"+String(d.getUTCDate()).padStart(2,"0");
+}
+function nextDayOnlineBookingClosed(date){
+  const now=ukBookingNow();
+  return (now.hour>=20) && date===addIsoDays(now.date,1);
+}
+function dateStep(){
+  let out=[],d=new Date(),cutoffHidden=false;
+  for(let i=0;i<42;i++){
+    let x=new Date(d);x.setDate(d.getDate()+i);
+    if(!S.hours[x.getDay()].open)continue;
+    let iso=x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0");
+    if(nextDayOnlineBookingClosed(iso)){cutoffHidden=true;continue;}
+    out.push(`<button class="choice" onclick="pickDate('${iso}')">${x.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})}</button>`);
+  }
+  const cutoffNote=cutoffHidden?`<div class="deposit-notice" style="margin-top:16px"><b>Looking for an appointment tomorrow?</b><br><span>Next-day online bookings close at <b>8:00pm</b>. If you're looking for a last-minute appointment after this time, please contact me directly to check availability and I'll do my best to accommodate you.</span></div>`:"";
+  $("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a date</h2><p>${esc(W.service.name)}</p><div class="dates">${out.join("")}</div>${cutoffNote}</div>`;
+}
+async function pickDate(d){
+  if(nextDayOnlineBookingClosed(d)){toast("Next-day online bookings close at 8:00pm. Please contact me directly to check availability.");return;}
+  W.date=d;W.cloudBusy=[];
+  if(window.CloudDB?.enabled()){try{await syncCloudAvailability(false);W.cloudBusy=await CloudDB.busySlots(d)}catch(e){console.error(e);return toast("Could not check online availability")}}
+  W.step=5;bookRender();
+}
 function overlap(t,d,b,bd){return mins(t)<mins(b)+bd&&mins(b)<mins(t)+d} function bookingBlocksTime(b){return !["cancelled","no_show"].includes(b.status||"confirmed")} function slots(){let h=S.hours[new Date(W.date+"T12:00").getDay()],o=[];for(let m=mins(h.start);m+W.service.duration<=mins(h.end);m+=30){let t=ts(m),busy=S.bookings.some(b=>bookingBlocksTime(b)&&b.date===W.date&&overlap(t,W.service.duration,b.time,b.duration)),cloud=(W.cloudBusy||[]).some(b=>overlap(t,W.service.duration,b.time,b.duration)),block=S.blocks.some(b=>b.date===W.date&&overlap(t,W.service.duration,b.start,mins(b.end)-mins(b.start)));if(!busy&&!cloud&&!block)o.push(t)}return o} function timeStep(){$("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a time</h2><p>${nice(W.date)}</p><div class="times">${slots().map(t=>`<button class="choice" onclick="pickTime('${t}')">${t}</button>`).join("")||"No times available"}</div></div>`} function pickTime(t){W.time=t;W.step=6;bookRender()}
 function details(){
  let x=W.service,total=x.price+(W.pinCurls?2:0),dep=depositFor(x),remaining=Math.max(0,total-dep);
  $("#bookbody").innerHTML=`<div class="bookcard"><h2>Your details</h2>
- <div class="form"><input id="bn" placeholder="Full name"><input id="bp" placeholder="Mobile number"><input id="be" type="email" placeholder="Email address" autocomplete="email"><textarea id="bnotes" placeholder="Notes — you can mention a gallery style you like"></textarea></div>
- <div class="summary"><b>${esc(x.name)}</b><br>${nice(W.date)} at ${W.time}<br><small class="booking-location">Cobella &amp; Co · 215 London Road, Hazel Grove, Stockport · SK7 4HS</small><br>${x.price===0?"Free":"£"+x.price}${W.pinCurls?"<br><b>Pin Curls +£2</b>":""}</div>
- ${dep?`<div class="deposit-notice"><span class="deposit-badge">DEPOSIT REQUIRED</span><h3>£${dep} deposit</h3><p>A £${dep} deposit is required to secure this appointment. Payment details will be sent to you after your booking request.</p><small>Remaining balance after deposit: £${remaining}</small></div>`:`<div class="deposit-notice free-booking"><h3>No deposit required</h3><p>This is a free appointment/service.</p></div>`}
- <div class="booking-total"><span>Service total</span><b>${total===0?"Free":"£"+total}</b></div>
+ <div class="form"><input id="bn" placeholder="Full name"><input id="bp" placeholder="Mobile number"><input id="be" type="email" placeholder="Email address" autocomplete="email"><textarea id="bnotes" placeholder="Notes Ã¢â‚¬â€ you can mention a gallery style you like"></textarea></div>
+ <div class="summary"><b>${esc(x.name)}</b><br>${nice(W.date)} at ${W.time}<br><small class="booking-location">Cobella &amp; Co Ã‚Â· 215 London Road, Hazel Grove, Stockport Ã‚Â· SK7 4HS</small><br>${x.price===0?"Free":"Ã‚Â£"+x.price}${W.pinCurls?"<br><b>Pin Curls +Ã‚Â£2</b>":""}</div>
+ ${dep?`<div class="deposit-notice"><span class="deposit-badge">DEPOSIT REQUIRED</span><h3>Ã‚Â£${dep} deposit</h3><p>A Ã‚Â£${dep} deposit is required to secure this appointment. Payment details will be sent to you after your booking request.</p><small>Remaining balance after deposit: Ã‚Â£${remaining}</small></div>`:`<div class="deposit-notice free-booking"><h3>No deposit required</h3><p>This is a free appointment/service.</p></div>`}
+ <div class="booking-total"><span>Service total</span><b>${total===0?"Free":"Ã‚Â£"+total}</b></div>
  <button class="primary full" onclick="confirmBook()">Request booking</button></div>`;
 }
-async function confirmBook(){let n=$("#bn").value.trim(),p=$("#bp").value.trim(),e=$("#be").value.trim();if(!n||!p||!e)return toast("Add your name, mobile and email");if(!/^\S+@\S+\.\S+$/.test(e))return toast("Add a valid email address");let x=W.service,booking={id:uid(),name:n,phone:p,email:e,notes:$("#bnotes").value,serviceId:x.id,serviceName:x.name,date:W.date,time:W.time,duration:x.duration,price:x.price+(W.pinCurls?2:0),basePrice:x.price,deposit:depositFor(x),depositPaid:false,pinCurls:!!W.pinCurls,status:"confirmed",bookingRef:bookingRef()};let btn=$("#bookbody .primary.full");if(btn){btn.disabled=true;btn.textContent="Saving booking…"}try{if(window.CloudDB?.enabled()){let r=await CloudDB.createBooking(booking);if(r?.booking)booking=r.booking}}catch(err){console.error(err);if(btn){btn.disabled=false;btn.textContent="Request booking"}return toast((err?.message||"").includes("appointment time")?"That time has just been taken. Please choose another time.":"Could not save booking online. Please try again.")}S.bookings.push(booking);save();$("#bookbody").innerHTML=`<div class="bookcard" style="text-align:center"><h2>✓ You're booked</h2><p>${nice(W.date)} at ${W.time}${W.pinCurls?"<br>Pin Curls +£2":""}</p>${depositFor(x)?`<div class="deposit-confirm"><b>£${depositFor(x)} deposit required</b><br><span>Your payment details will be sent to you separately to secure the appointment.</span></div>`:""}<div class="deposit-notice"><b>Manage your booking online</b><br><span>Use the email address and mobile number you booked with. You can reschedule up to 48 hours before your appointment.</span></div><p class="confirm-address">Cobella &amp; Co<br>215 London Road, Hazel Grove, Stockport, SK7 4HS</p><button class="primary" onclick="home()">Done</button></div>`;if(authed)adminRender()}
+async function confirmBook(){let n=$("#bn").value.trim(),p=$("#bp").value.trim(),e=$("#be").value.trim();if(!n||!p||!e)return toast("Add your name, mobile and email");if(!/^\S+@\S+\.\S+$/.test(e))return toast("Add a valid email address");let x=W.service,booking={id:uid(),name:n,phone:p,email:e,notes:$("#bnotes").value,serviceId:x.id,serviceName:x.name,date:W.date,time:W.time,duration:x.duration,price:x.price+(W.pinCurls?2:0),basePrice:x.price,deposit:depositFor(x),depositPaid:false,pinCurls:!!W.pinCurls,status:"confirmed",bookingRef:bookingRef()};let btn=$("#bookbody .primary.full");if(btn){btn.disabled=true;btn.textContent="Saving bookingÃ¢â‚¬Â¦"}try{if(window.CloudDB?.enabled()){let r=await CloudDB.createBooking(booking);if(r?.booking)booking=r.booking}}catch(err){console.error(err);if(btn){btn.disabled=false;btn.textContent="Request booking"}return toast((err?.message||"").includes("appointment time")?"That time has just been taken. Please choose another time.":"Could not save booking online. Please try again.")}S.bookings.push(booking);save();$("#bookbody").innerHTML=`<div class="bookcard" style="text-align:center"><h2>Ã¢Å“â€œ You're booked</h2><p>${nice(W.date)} at ${W.time}${W.pinCurls?"<br>Pin Curls +Ã‚Â£2":""}</p>${depositFor(x)?`<div class="deposit-confirm"><b>Ã‚Â£${depositFor(x)} deposit required</b><br><span>Your payment details will be sent to you separately to secure the appointment.</span></div>`:""}<div class="deposit-notice"><b>Manage your booking online</b><br><span>Use the email address and mobile number you booked with. You can reschedule up to 48 hours before your appointment.</span></div><p class="confirm-address">Cobella &amp; Co<br>215 London Road, Hazel Grove, Stockport, SK7 4HS</p><button class="primary" onclick="home()">Done</button></div>`;if(authed)adminRender()}
 let MY={bookings:[],booking:null,email:"",phone:"",busy:[],date:""};
 function customerCutoffOk(b){
   const at=new Date(`${b.date}T${b.time}:00`);
@@ -130,7 +162,7 @@ function renderMyBookings(){
   const card=b=>{
     const manageable=b.status==="confirmed"&&customerCutoffOk(b);
     const status={confirmed:"Booked",arrived:"Arrived",completed:"Completed",no_show:"No-show",cancelled:"Cancelled"}[b.status]||"Booked";
-    return `<div class="card my-booking-card"><div class="my-booking-head"><div><small>${esc(status.toUpperCase())}</small><h3>${esc(b.serviceName)}</h3></div><span class="status-pill">${status}</span></div><p><b>${nice(b.date)} at ${b.time}</b><br>${b.duration} minutes${b.pinCurls?" · Pin Curls +£2":""}</p><p>${b.price===0?"Free":"£"+b.price}${b.deposit?` · £${b.deposit} deposit`:""}</p>${manageable?`<div class="my-booking-actions"><button onclick="startCustomerReschedule('${b.id}')">Reschedule</button></div><small class="cutoff-note">You can reschedule online up to 48 hours before your appointment.</small>`:`${b.status==="confirmed"?`<div class="cutoff-locked">This appointment is within 48 hours and can no longer be rescheduled online.</div>`:""}`}<div class="cutoff-note"><b>Need to cancel?</b> Please contact me directly. Cancellations must be made at least 48 hours before your appointment.</div></div>`;
+    return `<div class="card my-booking-card"><div class="my-booking-head"><div><small>${esc(status.toUpperCase())}</small><h3>${esc(b.serviceName)}</h3></div><span class="status-pill">${status}</span></div><p><b>${nice(b.date)} at ${b.time}</b><br>${b.duration} minutes${b.pinCurls?" Ã‚Â· Pin Curls +Ã‚Â£2":""}</p><p>${b.price===0?"Free":"Ã‚Â£"+b.price}${b.deposit?` Ã‚Â· Ã‚Â£${b.deposit} deposit`:""}</p>${manageable?`<div class="my-booking-actions"><button onclick="startCustomerReschedule('${b.id}')">Reschedule</button></div><small class="cutoff-note">You can reschedule online up to 48 hours before your appointment.</small>`:`${b.status==="confirmed"?`<div class="cutoff-locked">This appointment is within 48 hours and can no longer be rescheduled online.</div>`:""}`}<div class="cutoff-note"><b>Need to cancel?</b> Please contact me directly. Cancellations must be made at least 48 hours before your appointment.</div></div>`;
   };
   list.innerHTML=`${upcoming.length?`<h3 class="manage-section-title">Upcoming appointments</h3>${upcoming.map(card).join("")}`:"<div class='card'>No upcoming appointments.</div>"}${past.length?`<h3 class="manage-section-title">Previous appointments</h3>${past.map(card).join("")}`:""}`;
 }
@@ -139,12 +171,12 @@ function startCustomerReschedule(id){
   const b=(MY.bookings||[]).find(x=>x.id===id);if(!b)return toast("Booking not found");MY.booking=b;
   if(!customerCutoffOk(b))return toast("This booking is inside the 48-hour rescheduling window");
   let out=[],d=new Date();for(let i=0;i<42;i++){let x=new Date(d);x.setDate(d.getDate()+i);if(!S.hours[x.getDay()]?.open)continue;let iso=x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0");out.push(`<button class="choice" onclick="customerRescheduleDate('${iso}')">${x.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})}</button>`)}
-  document.querySelector("#mineList").innerHTML=`<div class="card"><button class="text-back" onclick="renderMyBookings()">← Back</button><h3>Choose a new date</h3><p>${esc(b.serviceName)}</p><div class="dates">${out.join("")}</div><div class="cutoff-note"><b>Need to cancel?</b> Please contact me directly. Cancellations must be made at least 48 hours before your appointment.</div></div>`;
+  document.querySelector("#mineList").innerHTML=`<div class="card"><button class="text-back" onclick="renderMyBookings()">Ã¢â€ Â Back</button><h3>Choose a new date</h3><p>${esc(b.serviceName)}</p><div class="dates">${out.join("")}</div><div class="cutoff-note"><b>Need to cancel?</b> Please contact me directly. Cancellations must be made at least 48 hours before your appointment.</div></div>`;
 }
 async function customerRescheduleDate(date){
   const b=MY.booking;if(!b)return;MY.date=date;try{await syncCloudAvailability(false);MY.busy=await CloudDB.customerRescheduleBusySlots(date,b.id,MY.email,MY.phone)}catch(err){console.error(err);return toast("Could not check availability")}
   const h=S.hours[new Date(date+"T12:00").getDay()],o=[];for(let m=mins(h.start);m+b.duration<=mins(h.end);m+=30){let t=ts(m),busy=(MY.busy||[]).some(x=>overlap(t,b.duration,x.time,x.duration)),block=S.blocks.some(x=>x.date===date&&overlap(t,b.duration,x.start,mins(x.end)-mins(x.start)));if(!busy&&!block)o.push(t)}
-  document.querySelector("#mineList").innerHTML=`<div class="card"><button class="text-back" onclick="startCustomerReschedule('${b.id}')">← Back</button><h3>Choose a new time</h3><p>${nice(date)}</p><div class="times">${o.map(t=>`<button class="choice" onclick="customerRescheduleSave('${t}')">${t}</button>`).join("")||"No times available"}</div></div>`;
+  document.querySelector("#mineList").innerHTML=`<div class="card"><button class="text-back" onclick="startCustomerReschedule('${b.id}')">Ã¢â€ Â Back</button><h3>Choose a new time</h3><p>${nice(date)}</p><div class="times">${o.map(t=>`<button class="choice" onclick="customerRescheduleSave('${t}')">${t}</button>`).join("")||"No times available"}</div></div>`;
 }
 async function customerRescheduleSave(time){
   const b=MY.booking;if(!b)return;if(!confirm(`Move your appointment to ${nice(MY.date)} at ${time}?`))return;
@@ -308,7 +340,7 @@ async function bootstrapCloudFromThisDevice(){
 
 function adminOpen(){const customer=$("#customer"),header=$("header"),admin=$("#admin");if(customer)customer.classList.add("hide");if(header)header.classList.add("hide");if(admin)admin.classList.remove("hide")}
 function adminClose(){if(document.body?.dataset.page==="admin"){location.href="/";return}const admin=$("#admin"),customer=$("#customer"),header=$("header");if(admin)admin.classList.add("hide");if(customer)customer.classList.remove("hide");if(header)header.classList.remove("hide");home()}
-async function login(){let pin=$("#pin").value;if(window.CloudDB?.enabled()){try{await CloudDB.adminLogin(pin)}catch(e){console.error("Admin sign-in failed:",e);return toast("Could not sign in. Check your PIN and try again.")}S.settings.pin=String(pin);save();try{await bootstrapCloudFromThisDevice()}catch(e){console.error("Initial cloud sync failed:",e);toast("Signed in — refreshing cloud data…")}}else if(pin!==S.settings.pin){return toast("Incorrect PIN")}authed=true;$("#login").classList.add("hide");$("#dash").classList.remove("hide");await syncAdminBookings();await syncCloudAvailability(false);await syncCloudContent(false);await syncCloudGallery(false);adminRender()}
+async function login(){let pin=$("#pin").value;if(window.CloudDB?.enabled()){try{await CloudDB.adminLogin(pin)}catch(e){console.error("Admin sign-in failed:",e);return toast("Could not sign in. Check your PIN and try again.")}S.settings.pin=String(pin);save();try{await bootstrapCloudFromThisDevice()}catch(e){console.error("Initial cloud sync failed:",e);toast("Signed in Ã¢â‚¬â€ refreshing cloud dataÃ¢â‚¬Â¦")}}else if(pin!==S.settings.pin){return toast("Incorrect PIN")}authed=true;$("#login").classList.add("hide");$("#dash").classList.remove("hide");await syncAdminBookings();await syncCloudAvailability(false);await syncCloudContent(false);await syncCloudGallery(false);adminRender()}
 
 async function adminLogout(){
   try{
@@ -332,8 +364,8 @@ async function forgotPin(){
   const say=t=>{if(msg)msg.textContent=t;else toast(t)};
   if(!window.CloudDB?.enabled()||typeof CloudDB.sendAdminPinReset!=="function")return say("PIN reset is unavailable right now");
   try{
-    if(btn){btn.disabled=true;btn.textContent="Sending reset email…"}
-    say("Sending a secure reset link to your admin email…");
+    if(btn){btn.disabled=true;btn.textContent="Sending reset emailÃ¢â‚¬Â¦"}
+    say("Sending a secure reset link to your admin emailÃ¢â‚¬Â¦");
     await CloudDB.sendAdminPinReset();
     say("Reset email sent. Open the newest email and follow the link to create a new PIN.");
   }catch(e){
@@ -346,14 +378,14 @@ async function forgotPin(){
   }
 }
 async function tab(id){$$(".tab").forEach(x=>x.classList.add("hide"));$("#"+id).classList.remove("hide");await syncAdminBookings();await syncCloudAvailability(false);await syncCloudContent(false);await syncCloudGallery(false);adminRender()}
-function adminRender(){if(!authed)return;let active=S.bookings.filter(b=>bookingBlocksTime(b)),d=today();const tc=$("#todayCount"),uc=$("#upcomingCount"),rev=$("#revenue"),dd=$("#diaryDate");if(tc)tc.textContent=active.filter(b=>b.date===d).length;if(uc)uc.textContent=active.filter(b=>b.date>=d).length;if(rev)rev.textContent="£"+active.filter(b=>b.date>=d).reduce((a,b)=>a+b.price,0);if(dd&&!dd.value)dd.value=d;renderDiary();renderCustomers();renderServiceAdmin();renderGalleryAdmin();renderHours();renderBlocks();const bn=$("#businessName"),tg=$("#tagline"),ap=$("#adminPin");if(bn)bn.value=S.settings.name;if(tg)tg.value=S.settings.tag;if(ap)ap.value=S.settings.pin}
+function adminRender(){if(!authed)return;let active=S.bookings.filter(b=>bookingBlocksTime(b)),d=today();const tc=$("#todayCount"),uc=$("#upcomingCount"),rev=$("#revenue"),dd=$("#diaryDate");if(tc)tc.textContent=active.filter(b=>b.date===d).length;if(uc)uc.textContent=active.filter(b=>b.date>=d).length;if(rev)rev.textContent="Ã‚Â£"+active.filter(b=>b.date>=d).reduce((a,b)=>a+b.price,0);if(dd&&!dd.value)dd.value=d;renderDiary();renderCustomers();renderServiceAdmin();renderGalleryAdmin();renderHours();renderBlocks();const bn=$("#businessName"),tg=$("#tagline"),ap=$("#adminPin");if(bn)bn.value=S.settings.name;if(tg)tg.value=S.settings.tag;if(ap)ap.value=S.settings.pin}
 function openUpcomingAppointments(){
  const now=new Date();
  const rows=S.bookings.filter(b=>bookingBlocksTime(b)&&new Date(`${b.date}T${b.time||"00:00"}:00`).getTime()>=now.getTime()).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
  const statusLabel=b=>({confirmed:"Booked",arrived:"Arrived",completed:"Completed",no_show:"No-show",cancelled:"Cancelled"}[b.status||"confirmed"]||"Booked");
  const cards=rows.map(b=>{
-   const dep=b.deposit?`<small class="upcoming-deposit ${b.depositPaid?"paid":"due"}">${b.depositPaid?"Deposit paid":"£"+b.deposit+" deposit due"}</small>`:"";
-   return `<button class="upcoming-appt-card" type="button" onclick="openDiaryBooking('${b.id}')"><div class="upcoming-appt-date"><b>${nice(b.date)}</b><span>${esc(b.time||"")}</span></div><div class="upcoming-appt-main"><strong>${esc(b.name||"Customer")}</strong><span>${esc(b.serviceName||b.service||"Appointment")}</span>${dep}</div><em class="upcoming-appt-status">${statusLabel(b)}</em><i>›</i></button>`;
+   const dep=b.deposit?`<small class="upcoming-deposit ${b.depositPaid?"paid":"due"}">${b.depositPaid?"Deposit paid":"Ã‚Â£"+b.deposit+" deposit due"}</small>`:"";
+   return `<button class="upcoming-appt-card" type="button" onclick="openDiaryBooking('${b.id}')"><div class="upcoming-appt-date"><b>${nice(b.date)}</b><span>${esc(b.time||"")}</span></div><div class="upcoming-appt-main"><strong>${esc(b.name||"Customer")}</strong><span>${esc(b.serviceName||b.service||"Appointment")}</span>${dep}</div><em class="upcoming-appt-status">${statusLabel(b)}</em><i>Ã¢â‚¬Âº</i></button>`;
  }).join("");
  modal(`<div class="upcoming-list-modal"><span class="admin-kicker">UPCOMING</span><h2>Upcoming appointments</h2><p class="upcoming-list-count">${rows.length} appointment${rows.length===1?"":"s"}</p><div class="upcoming-appt-list">${cards||"<p>No upcoming appointments.</p>"}</div></div>`);
 }
@@ -391,11 +423,11 @@ function renderDiary(){
    const x=item.booking,st=item.start,d=Number(x.duration||60),en=item.end;
    const eh=Math.floor(en/60),em=en%60,left=8+item.col*(colWidth+gap);
    const depositClass=!Number(x.deposit)?"deposit-none":(x.depositPaid?"deposit-paid":"deposit-due");
-   const depositLabel=!Number(x.deposit)?"No deposit":(x.depositPaid?`✓ £${x.deposit} deposit paid`:`£${x.deposit} deposit due`);
+   const depositLabel=!Number(x.deposit)?"No deposit":(x.depositPaid?`Ã¢Å“â€œ Ã‚Â£${x.deposit} deposit paid`:`Ã‚Â£${x.deposit} deposit due`);
    const statusLabel={confirmed:"Booked",arrived:"Arrived",completed:"Completed",no_show:"No-show",cancelled:"Cancelled"}[x.status||"confirmed"]||"Booked";
    return `<button class="diary-appt ${depositClass}" style="top:${Math.max(0,(st-start)*ppm)}px;height:${Math.max(38,d*ppm)}px;left:${left}px;width:${colWidth}px" onclick="openDiaryBooking('${x.id}')">
-      <b>${x.time} – ${eh}:${String(em).padStart(2,"0")} · ${esc(x.name)}</b>
-      <span>${esc(x.serviceName||x.service||"Appointment")}${x.pinCurls?" · Pin Curls":""}</span>
+      <b>${x.time} Ã¢â‚¬â€œ ${eh}:${String(em).padStart(2,"0")} Ã‚Â· ${esc(x.name)}</b>
+      <span>${esc(x.serviceName||x.service||"Appointment")}${x.pinCurls?" Ã‚Â· Pin Curls":""}</span>
       <em class="appt-status status-${x.status||"confirmed"}">${statusLabel}</em>
       ${d>=45?`<small>${depositLabel}</small>`:""}
    </button>`;
@@ -404,9 +436,9 @@ function renderDiary(){
 
  el.innerHTML=`<div class="visual-diary ${isPhone?"phone-timeline":""}">
    <div class="diary-toolbar">
-     <button aria-label="Previous day" onclick="diaryMove(-1)">‹</button>
+     <button aria-label="Previous day" onclick="diaryMove(-1)">Ã¢â‚¬Â¹</button>
      <div><small>APPOINTMENTS</small><h3>${nice(date)}</h3></div>
-     <button aria-label="Next day" onclick="diaryMove(1)">›</button>
+     <button aria-label="Next day" onclick="diaryMove(1)">Ã¢â‚¬Âº</button>
    </div>
    <div class="diary-actions"><button class="today-btn" onclick="diaryToday()">Today</button><span>${bookings.length} appointment${bookings.length===1?"":"s"}</span></div>
    <div class="diary-scroll">
@@ -428,7 +460,7 @@ function diaryToday(){window.diaryDate=today();const input=$("#diaryDate");if(in
 function openDiaryBooking(id){
  let b=S.bookings.find(x=>x.id===id);if(!b)return;
  const depositHtml=Number(b.deposit)>0
-   ? `<label class="deposit-paid-control ${b.depositPaid?"is-paid":"is-due"}"><input type="checkbox" ${b.depositPaid?"checked":""} onchange="setDepositPaid('${b.id}',this.checked)"><span><b>${b.depositPaid?"Deposit paid":"Deposit still due"}</b><small>£${b.deposit} deposit</small></span></label>`
+   ? `<label class="deposit-paid-control ${b.depositPaid?"is-paid":"is-due"}"><input type="checkbox" ${b.depositPaid?"checked":""} onchange="setDepositPaid('${b.id}',this.checked)"><span><b>${b.depositPaid?"Deposit paid":"Deposit still due"}</b><small>Ã‚Â£${b.deposit} deposit</small></span></label>`
    : `<div class="deposit-no-payment">No deposit required</div>`;
  const status=b.status||"confirmed";
  const statusHtml=`<div class="appointment-status-control"><label>Appointment status<select onchange="setAppointmentStatus('${b.id}',this.value)"><option value="confirmed" ${status==="confirmed"?"selected":""}>Booked</option><option value="arrived" ${status==="arrived"?"selected":""}>Arrived</option><option value="completed" ${status==="completed"?"selected":""}>Completed</option><option value="no_show" ${status==="no_show"?"selected":""}>No-show</option><option value="cancelled" ${status==="cancelled"?"selected":""}>Cancelled</option></select></label></div>`;
@@ -480,9 +512,9 @@ async function manualSave(){
 
   if(clashes.length||blocked.length||outsideHours){
     let warning="This admin booking needs an override:\n\n";
-    if(clashes.length)warning+=`• Overlaps ${clashes.length} existing appointment${clashes.length===1?"":"s"}.\n`;
-    if(blocked.length)warning+=`• Overlaps blocked time.\n`;
-    if(outsideHours)warning+=`• Falls outside normal working hours.\n`;
+    if(clashes.length)warning+=`Ã¢â‚¬Â¢ Overlaps ${clashes.length} existing appointment${clashes.length===1?"":"s"}.\n`;
+    if(blocked.length)warning+=`Ã¢â‚¬Â¢ Overlaps blocked time.\n`;
+    if(outsideHours)warning+=`Ã¢â‚¬Â¢ Falls outside normal working hours.\n`;
     warning+="\nBook it anyway?";
     if(!confirm(warning))return;
   }
@@ -490,8 +522,8 @@ async function manualSave(){
   try{if(window.CloudDB?.enabled()){let r=await CloudDB.createAdminBooking(booking);if(r?.booking)booking=r.booking}}catch(e){console.error(e);return toast("Could not save booking online")}
   S.bookings.push(booking);save();closeModal();await syncAdminBookings();adminRender();toast("Booking saved");
 }
-function renderCustomers(){let m={};S.bookings.filter(b=>!b.customerHidden).forEach(b=>{let k=b.phone||b.email||b.name;m[k]=m[k]||{name:b.name,phone:b.phone,email:b.email||"",count:0};m[k].count++});$("#customerList").innerHTML=Object.values(m).map(c=>`<div class="adminrow customer-row" onclick="openCustomer('${encodeURIComponent(c.phone)}')"><div><b>${esc(c.name)}</b><br>${esc(c.phone)}</div><small>${c.count} booking(s) · View →</small></div>`).join("")||"No customers yet."}
-function openCustomer(encodedPhone){const phone=decodeURIComponent(encodedPhone),rows=S.bookings.filter(b=>b.phone===phone).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));if(!rows.length)return;const c=rows[0],up=rows.filter(b=>b.status!=="cancelled"&&b.date>=today()),past=rows.filter(b=>b.date<today()||["cancelled","no_show","completed"].includes(b.status));const card=b=>`<div class="customer-booking-detail"><div><b>${esc(b.serviceName)}</b><br><span>${nice(b.date)} at ${b.time}</span><br><small>${b.status==="cancelled"?"Cancelled":b.status==="completed"?"Completed":b.status==="no_show"?"No-show":"Booked"}${b.bookingRef?` · Ref ${esc(b.bookingRef)}`:""}</small></div><div><b>${b.price===0?"Free":"£"+b.price}</b>${b.deposit?`<br><small>Deposit ${b.depositPaid?"paid":"due"}</small>`:""}</div></div>`;modal(`<div class="customer-profile"><span class="admin-kicker">CUSTOMER</span><h2>${esc(c.name)}</h2><div class="customer-contact"><b>Mobile</b><span>${esc(c.phone||"—")}</span><b>Email</b><span>${esc(c.email||"—")}</span></div><h3>Upcoming appointments</h3>${up.length?up.map(card).join(""):"<p>No upcoming appointments.</p>"}<h3>Booking history</h3>${past.length?past.map(card).join(""):"<p>No previous appointments.</p>"}<div style="margin-top:24px"><button class="danger-btn" onclick="deleteCustomer('${encodeURIComponent(phone)}')">Delete customer</button><p class="muted" style="margin-top:8px">Removes this person from your Customers list. Their appointment history is kept.</p></div></div>`) }
+function renderCustomers(){let m={};S.bookings.filter(b=>!b.customerHidden).forEach(b=>{let k=b.phone||b.email||b.name;m[k]=m[k]||{name:b.name,phone:b.phone,email:b.email||"",count:0};m[k].count++});$("#customerList").innerHTML=Object.values(m).map(c=>`<div class="adminrow customer-row" onclick="openCustomer('${encodeURIComponent(c.phone)}')"><div><b>${esc(c.name)}</b><br>${esc(c.phone)}</div><small>${c.count} booking(s) Ã‚Â· View Ã¢â€ â€™</small></div>`).join("")||"No customers yet."}
+function openCustomer(encodedPhone){const phone=decodeURIComponent(encodedPhone),rows=S.bookings.filter(b=>b.phone===phone).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));if(!rows.length)return;const c=rows[0],up=rows.filter(b=>b.status!=="cancelled"&&b.date>=today()),past=rows.filter(b=>b.date<today()||["cancelled","no_show","completed"].includes(b.status));const card=b=>`<div class="customer-booking-detail"><div><b>${esc(b.serviceName)}</b><br><span>${nice(b.date)} at ${b.time}</span><br><small>${b.status==="cancelled"?"Cancelled":b.status==="completed"?"Completed":b.status==="no_show"?"No-show":"Booked"}${b.bookingRef?` Ã‚Â· Ref ${esc(b.bookingRef)}`:""}</small></div><div><b>${b.price===0?"Free":"Ã‚Â£"+b.price}</b>${b.deposit?`<br><small>Deposit ${b.depositPaid?"paid":"due"}</small>`:""}</div></div>`;modal(`<div class="customer-profile"><span class="admin-kicker">CUSTOMER</span><h2>${esc(c.name)}</h2><div class="customer-contact"><b>Mobile</b><span>${esc(c.phone||"Ã¢â‚¬â€")}</span><b>Email</b><span>${esc(c.email||"Ã¢â‚¬â€")}</span></div><h3>Upcoming appointments</h3>${up.length?up.map(card).join(""):"<p>No upcoming appointments.</p>"}<h3>Booking history</h3>${past.length?past.map(card).join(""):"<p>No previous appointments.</p>"}<div style="margin-top:24px"><button class="danger-btn" onclick="deleteCustomer('${encodeURIComponent(phone)}')">Delete customer</button><p class="muted" style="margin-top:8px">Removes this person from your Customers list. Their appointment history is kept.</p></div></div>`) }
 async function deleteCustomer(encodedPhone){const phone=decodeURIComponent(encodedPhone),rows=S.bookings.filter(b=>b.phone===phone);if(!rows.length)return;const name=rows[0].name||"this customer";if(!confirm(`Delete ${name} from your Customers list?\n\nTheir appointment and booking history will be kept.`))return;try{if(window.CloudDB?.enabled()&&typeof CloudDB.hideCustomer==="function")await CloudDB.hideCustomer(phone);S.bookings.forEach(b=>{if(b.phone===phone)b.customerHidden=true});save();closeModal();renderCustomers();toast("Customer deleted from list")}catch(err){console.error(err);toast("Could not delete customer")}}
 
 function renderGalleryAdmin(){
@@ -500,7 +532,7 @@ function renderGalleryAdmin(){
    <img src="${g.src}" alt="${esc(g.label)}">
    <div class="gallery-admin-info"><b>${esc(g.label)}</b><small>Shown on your website</small></div>
    <div class="gallery-admin-actions"><button onclick="galleryEdit('${g.id}')">Edit</button><button class="danger-btn" onclick="galleryDelete('${g.id}')">Delete</button></div>
- </div>`).join(""):`<div class="empty-admin">No gallery photos yet. Use “Add photo” to upload one.</div>`;
+ </div>`).join(""):`<div class="empty-admin">No gallery photos yet. Use Ã¢â‚¬Å“Add photoÃ¢â‚¬Â to upload one.</div>`;
 }
 function galleryEdit(id){
  const g=S.gallery.find(x=>x.id===id);if(!g)return;
@@ -587,7 +619,7 @@ function resizeGalleryImage(file,maxSize=1200,quality=.82){
  });
 }
 
-function renderServiceAdmin(){$("#serviceList").innerHTML=S.services.map(x=>`<div class="adminrow"><div><b>${esc(x.name)}</b><br>${x.duration} min · ${x.price===0?"Free":"£"+x.price}${Number(x.deposit)>0?` · £${x.deposit} deposit`:" · No deposit"}</div><button onclick="serviceForm('${x.id}')">Edit</button></div>`).join("")} function serviceForm(id=""){let x=S.services.find(s=>s.id===id);modal(`<h2>${x?"Edit":"Add"} service</h2><div class="form"><select id="scat">${CATEGORY_ORDER.map(c=>`<option value="${c}" ${x?.category===c?"selected":""}>${c}</option>`).join("")}</select><input id="sn" placeholder="Name" value="${esc(x?.name||"")}"><input id="sd" type="number" value="${x?.duration||60}"><input id="sp" type="number" value="${x?.price??30}"><input id="sdep" type="number" min="0" value="${x?.deposit??10}"><textarea id="snote" placeholder="Service information">${esc(x?.note||"")}</textarea><button class="primary" onclick="serviceSave('${id}')">Save</button></div>`)} async function serviceSave(id){let o={category:$("#scat").value,name:$("#sn").value,duration:+$("#sd").value,price:+$("#sp").value,deposit:Math.max(0,+$("#sdep").value||0),note:$("#snote").value};if(!o.name.trim())return toast("Add a service name");const previous=structuredClone(S.services);if(id)Object.assign(S.services.find(x=>x.id===id),o);else S.services.push({id:uid(),...o});try{if(window.CloudDB?.enabled()&&typeof CloudDB.saveSiteConfig==="function")await CloudDB.saveSiteConfig({services:S.services,settings:{name:S.settings.name,tag:S.settings.tag}});save();closeModal();render();adminRender();toast("Service saved and synced")}catch(e){console.error(e);S.services=previous;save();toast("Could not save service online")}}
+function renderServiceAdmin(){$("#serviceList").innerHTML=S.services.map(x=>`<div class="adminrow"><div><b>${esc(x.name)}</b><br>${x.duration} min Ã‚Â· ${x.price===0?"Free":"Ã‚Â£"+x.price}${Number(x.deposit)>0?` Ã‚Â· Ã‚Â£${x.deposit} deposit`:" Ã‚Â· No deposit"}</div><button onclick="serviceForm('${x.id}')">Edit</button></div>`).join("")} function serviceForm(id=""){let x=S.services.find(s=>s.id===id);modal(`<h2>${x?"Edit":"Add"} service</h2><div class="form"><select id="scat">${CATEGORY_ORDER.map(c=>`<option value="${c}" ${x?.category===c?"selected":""}>${c}</option>`).join("")}</select><input id="sn" placeholder="Name" value="${esc(x?.name||"")}"><input id="sd" type="number" value="${x?.duration||60}"><input id="sp" type="number" value="${x?.price??30}"><input id="sdep" type="number" min="0" value="${x?.deposit??10}"><textarea id="snote" placeholder="Service information">${esc(x?.note||"")}</textarea><button class="primary" onclick="serviceSave('${id}')">Save</button></div>`)} async function serviceSave(id){let o={category:$("#scat").value,name:$("#sn").value,duration:+$("#sd").value,price:+$("#sp").value,deposit:Math.max(0,+$("#sdep").value||0),note:$("#snote").value};if(!o.name.trim())return toast("Add a service name");const previous=structuredClone(S.services);if(id)Object.assign(S.services.find(x=>x.id===id),o);else S.services.push({id:uid(),...o});try{if(window.CloudDB?.enabled()&&typeof CloudDB.saveSiteConfig==="function")await CloudDB.saveSiteConfig({services:S.services,settings:{name:S.settings.name,tag:S.settings.tag}});save();closeModal();render();adminRender();toast("Service saved and synced")}catch(e){console.error(e);S.services=previous;save();toast("Could not save service online")}}
 const DAYS=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 function renderHours(){
   $("#hours").innerHTML=DAYS.map((x,i)=>`<div class="hoursrow"><b>${x}</b><select id="ho${i}"><option value="1">Open</option><option value="0">Closed</option></select><input id="hs${i}" type="time" value="${S.hours[i].start}"><input id="he${i}" type="time" value="${S.hours[i].end}"></div>`).join("");
@@ -662,7 +694,7 @@ async function blockSave(){
 }
 
 function renderBlocks(){
-  $("#blocks").innerHTML=S.blocks.map(b=>`<div class="adminrow"><div><b>${esc(b.reason)}</b><br>${nice(b.date)} · ${b.start}–${b.end}</div><button onclick="blockDelete('${b.id}')">Remove</button></div>`).join("")||"No blocked time.";
+  $("#blocks").innerHTML=S.blocks.map(b=>`<div class="adminrow"><div><b>${esc(b.reason)}</b><br>${nice(b.date)} Ã‚Â· ${b.start}Ã¢â‚¬â€œ${b.end}</div><button onclick="blockDelete('${b.id}')">Remove</button></div>`).join("")||"No blocked time.";
 }
 
 async function blockDelete(id){
@@ -739,13 +771,13 @@ async function completeAdminPinReset(){
   if(!/^\d{6,}$/.test(a))return say("Use a numeric PIN with at least 6 digits");
   if(a!==b)return say("The PINs do not match");
   try{
-    if(btn){btn.disabled=true;btn.textContent="Saving…"}
-    if(msg)msg.textContent="Saving your new PIN…";
+    if(btn){btn.disabled=true;btn.textContent="SavingÃ¢â‚¬Â¦"}
+    if(msg)msg.textContent="Saving your new PINÃ¢â‚¬Â¦";
     const session=await CloudDB.getAuthSession();
     if(!session)throw new Error("Recovery session is not active. Reopen the newest recovery email link.");
     await CloudDB.finishPasswordRecovery(a);
     S.settings.pin=a;save();
-    if(msg)msg.textContent="PIN updated. Opening Admin…";
+    if(msg)msg.textContent="PIN updated. Opening AdminÃ¢â‚¬Â¦";
     history.replaceState({},document.title,location.pathname);
     setTimeout(()=>location.href="/admin/",650);
   }catch(e){
