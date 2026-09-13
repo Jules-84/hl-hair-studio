@@ -105,7 +105,7 @@ function addIsoDays(iso,days){
 }
 function nextDayOnlineBookingClosed(date){
   const now=ukBookingNow();
-  return (now.hour>=12) && date===addIsoDays(now.date,1);
+  return (now.hour>=20) && date===addIsoDays(now.date,1);
 }
 function lateNextDayMessage(date){
   $("#bookbody").innerHTML=`<div class="bookcard"><button class="text-back" onclick="bookRender()">\u2190 Back</button><h2>Looking for an appointment ${nice(date)}?</h2><div class="deposit-notice" style="margin-top:16px"><b>Next-day online bookings close at 8:00pm.</b><br><span>If you're looking for a last-minute appointment for this day, please contact me directly to check availability and I'll do my best to accommodate you.</span><div style="margin-top:16px;display:grid;gap:10px"><a class="primary full" href="mailto:hlhairstudio1@gmail.com">Email hlhairstudio1@gmail.com</a><a class="primary full" href="https://www.instagram.com/hlhairstudio/" target="_blank" rel="noopener">Instagram @hlhairstudio</a></div></div></div>`;
