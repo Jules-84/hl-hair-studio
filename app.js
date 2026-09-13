@@ -99,16 +99,21 @@ function ukBookingNow(){
   const v=Object.fromEntries(parts.filter(x=>x.type!=="literal").map(x=>[x.type,x.value]));
   return {date:`${v.year}-${v.month}-${v.day}`,hour:Number(v.hour),minute:Number(v.minute)};
 }
-function addIsoDays(iso,days){
-  const d=new Date(iso+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+days);
-  return d.getUTCFullYear()+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-"+String(d.getUTCDate()).padStart(2,"0");
+function londonEpoch(date,time){
+  const [y,mo,d]=date.split("-").map(Number),[h,mi]=time.split(":").map(Number);
+  const guess=Date.UTC(y,mo-1,d,h,mi,0);
+  const fmt=new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/London",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"});
+  const parts=Object.fromEntries(fmt.formatToParts(new Date(guess)).filter(x=>x.type!=="literal").map(x=>[x.type,x.value]));
+  const asUtc=Date.UTC(Number(parts.year),Number(parts.month)-1,Number(parts.day),Number(parts.hour),Number(parts.minute),Number(parts.second));
+  const offset=asUtc-guess;
+  return guess-offset;
 }
-function nextDayOnlineBookingClosed(date){
-  const now=ukBookingNow();
-  return (now.hour>=12) && date===addIsoDays(now.date,1);
+function within24Hours(date,time){
+  return londonEpoch(date,time)-Date.now()<24*60*60*1000;
 }
-function lateNextDayMessage(date){
-  $("#bookbody").innerHTML=`<div class="bookcard"><button class="text-back" onclick="bookRender()">\u2190 Back</button><h2>Looking for an appointment ${nice(date)}?</h2><div class="deposit-notice" style="margin-top:16px"><b>Next-day online bookings close at 8:00pm.</b><br><span>If you're looking for a last-minute appointment for this day, please contact me directly to check availability and I'll do my best to accommodate you.</span><div style="margin-top:16px;display:grid;gap:10px"><a class="primary full" href="mailto:hlhairstudio1@gmail.com">Email hlhairstudio1@gmail.com</a><a class="primary full" href="https://www.instagram.com/hlhairstudio/" target="_blank" rel="noopener">Instagram @hlhairstudio</a></div></div></div>`;
+function lastMinuteContactMessage(date,time){
+  const when=time?`${nice(date)} at ${time}`:nice(date);
+  $("#bookbody").innerHTML=`<div class="bookcard"><button class="text-back" onclick="W.step=5;bookRender()">\u2190 Back</button><h2>Looking for an appointment ${when}?</h2><div class="deposit-notice" style="margin-top:16px"><b>Online bookings close 24 hours before each appointment time.</b><br><span>This time is now within 24 hours. Please contact me directly to check last-minute availability and I'll do my best to accommodate you.</span><div style="margin-top:16px;display:grid;gap:10px"><a class="primary full" href="mailto:hlhairstudio1@gmail.com">Email hlhairstudio1@gmail.com</a><a class="primary full" href="https://www.instagram.com/hlhairstudio/" target="_blank" rel="noopener">Instagram @hlhairstudio</a></div></div></div>`;
 }
 function dateStep(){
   let out=[],d=new Date();
@@ -116,19 +121,25 @@ function dateStep(){
     let x=new Date(d);x.setDate(d.getDate()+i);
     if(!S.hours[x.getDay()].open)continue;
     let iso=x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0");
-    const cutoff=nextDayOnlineBookingClosed(iso);
     const label=x.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
-    out.push(`<button class="choice${cutoff?" cutoff-date":""}" onclick="pickDate('${iso}')">${label}${cutoff?`<small style="display:block;margin-top:4px">Contact me</small>`:""}</button>`);
+    out.push(`<button class="choice" onclick="pickDate('${iso}')">${label}</button>`);
   }
   $("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a date</h2><p>${esc(W.service.name)}</p><div class="dates">${out.join("")}</div></div>`;
 }
 async function pickDate(d){
-  if(nextDayOnlineBookingClosed(d)){lateNextDayMessage(d);return;}
   W.date=d;W.cloudBusy=[];
   if(window.CloudDB?.enabled()){try{await syncCloudAvailability(false);W.cloudBusy=await CloudDB.busySlots(d)}catch(e){console.error(e);return toast("Could not check online availability")}}
   W.step=5;bookRender();
 }
-function overlap(t,d,b,bd){return mins(t)<mins(b)+bd&&mins(b)<mins(t)+d} function bookingBlocksTime(b){return !["cancelled","no_show"].includes(b.status||"confirmed")} function slots(){let h=S.hours[new Date(W.date+"T12:00").getDay()],o=[];for(let m=mins(h.start);m+W.service.duration<=mins(h.end);m+=30){let t=ts(m),busy=S.bookings.some(b=>bookingBlocksTime(b)&&b.date===W.date&&overlap(t,W.service.duration,b.time,b.duration)),cloud=(W.cloudBusy||[]).some(b=>overlap(t,W.service.duration,b.time,b.duration)),block=S.blocks.some(b=>b.date===W.date&&overlap(t,W.service.duration,b.start,mins(b.end)-mins(b.start)));if(!busy&&!cloud&&!block)o.push(t)}return o} function timeStep(){$("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a time</h2><p>${nice(W.date)}</p><div class="times">${slots().map(t=>`<button class="choice" onclick="pickTime('${t}')">${t}</button>`).join("")||"No times available"}</div></div>`} function pickTime(t){W.time=t;W.step=6;bookRender()}
+function overlap(t,d,b,bd){return mins(t)<mins(b)+bd&&mins(b)<mins(t)+d}
+function bookingBlocksTime(b){return !["cancelled","no_show"].includes(b.status||"confirmed")}
+function slots(){let h=S.hours[new Date(W.date+"T12:00").getDay()],o=[];for(let m=mins(h.start);m+W.service.duration<=mins(h.end);m+=30){let t=ts(m),busy=S.bookings.some(b=>bookingBlocksTime(b)&&b.date===W.date&&overlap(t,W.service.duration,b.time,b.duration)),cloud=(W.cloudBusy||[]).some(b=>overlap(t,W.service.duration,b.time,b.duration)),block=S.blocks.some(b=>b.date===W.date&&overlap(t,W.service.duration,b.start,mins(b.end)-mins(b.start)));if(!busy&&!cloud&&!block)o.push(t)}return o}
+function timeStep(){
+  const available=slots();
+  const buttons=available.map(t=>within24Hours(W.date,t)?`<button class="choice cutoff-date" onclick="lastMinuteContactMessage('${W.date}','${t}')"><span>${t}</span><small style="display:block;margin-top:4px">Contact me</small></button>`:`<button class="choice" onclick="pickTime('${t}')">${t}</button>`).join("");
+  $("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a time</h2><p>${nice(W.date)}</p><div class="times">${buttons||"No times available"}</div></div>`;
+}
+function pickTime(t){if(within24Hours(W.date,t)){lastMinuteContactMessage(W.date,t);return}W.time=t;W.step=6;bookRender()}
 function details(){
  let x=W.service,total=x.price+(W.pinCurls?2:0),dep=depositFor(x),remaining=Math.max(0,total-dep);
  $("#bookbody").innerHTML=`<div class="bookcard"><h2>Your details</h2>
@@ -138,7 +149,7 @@ function details(){
  <div class="booking-total"><span>Service total</span><b>${total===0?"Free":"\u00A3"+total}</b></div>
  <button class="primary full" onclick="confirmBook()">Request booking</button></div>`;
 }
-async function confirmBook(){let n=$("#bn").value.trim(),p=$("#bp").value.trim(),e=$("#be").value.trim();if(!n||!p||!e)return toast("Add your name, mobile and email");if(!/^\S+@\S+\.\S+$/.test(e))return toast("Add a valid email address");let x=W.service,booking={id:uid(),name:n,phone:p,email:e,notes:$("#bnotes").value,serviceId:x.id,serviceName:x.name,date:W.date,time:W.time,duration:x.duration,price:x.price+(W.pinCurls?2:0),basePrice:x.price,deposit:depositFor(x),depositPaid:false,pinCurls:!!W.pinCurls,status:"confirmed",bookingRef:bookingRef()};let btn=$("#bookbody .primary.full");if(btn){btn.disabled=true;btn.textContent="Saving booking\u2026"}try{if(window.CloudDB?.enabled()){let r=await CloudDB.createBooking(booking);if(r?.booking)booking=r.booking}}catch(err){console.error(err);if(btn){btn.disabled=false;btn.textContent="Request booking"}return toast((err?.message||"").includes("appointment time")?"That time has just been taken. Please choose another time.":"Could not save booking online. Please try again.")}S.bookings.push(booking);save();$("#bookbody").innerHTML=`<div class="bookcard" style="text-align:center"><h2>\u2713 You're booked</h2><p>${nice(W.date)} at ${W.time}${W.pinCurls?"<br>Pin Curls +\u00A32":""}</p>${depositFor(x)?`<div class="deposit-confirm"><b>\u00A3${depositFor(x)} deposit required</b><br><span>Your payment details will be sent to you separately to secure the appointment.</span></div>`:""}<div class="deposit-notice"><b>Manage your booking online</b><br><span>Use the email address and mobile number you booked with. You can reschedule up to 48 hours before your appointment.</span></div><p class="confirm-address">Cobella &amp; Co<br>215 London Road, Hazel Grove, Stockport, SK7 4HS</p><button class="primary" onclick="home()">Done</button></div>`;if(authed)adminRender()}
+async function confirmBook(){if(within24Hours(W.date,W.time)){lastMinuteContactMessage(W.date,W.time);return}let n=$("#bn").value.trim(),p=$("#bp").value.trim(),e=$("#be").value.trim();if(!n||!p||!e)return toast("Add your name, mobile and email");if(!/^\S+@\S+\.\S+$/.test(e))return toast("Add a valid email address");let x=W.service,booking={id:uid(),name:n,phone:p,email:e,notes:$("#bnotes").value,serviceId:x.id,serviceName:x.name,date:W.date,time:W.time,duration:x.duration,price:x.price+(W.pinCurls?2:0),basePrice:x.price,deposit:depositFor(x),depositPaid:false,pinCurls:!!W.pinCurls,status:"confirmed",bookingRef:bookingRef()};let btn=$("#bookbody .primary.full");if(btn){btn.disabled=true;btn.textContent="Saving booking\u2026"}try{if(window.CloudDB?.enabled()){let r=await CloudDB.createBooking(booking);if(r?.booking)booking=r.booking}}catch(err){console.error(err);if(btn){btn.disabled=false;btn.textContent="Request booking"}return toast((err?.message||"").includes("appointment time")?"That time has just been taken. Please choose another time.":"Could not save booking online. Please try again.")}S.bookings.push(booking);save();$("#bookbody").innerHTML=`<div class="bookcard" style="text-align:center"><h2>\u2713 You're booked</h2><p>${nice(W.date)} at ${W.time}${W.pinCurls?"<br>Pin Curls +\u00A32":""}</p>${depositFor(x)?`<div class="deposit-confirm"><b>\u00A3${depositFor(x)} deposit required</b><br><span>Your payment details will be sent to you separately to secure the appointment.</span></div>`:""}<div class="deposit-notice"><b>Manage your booking online</b><br><span>Use the email address and mobile number you booked with. You can reschedule up to 48 hours before your appointment.</span></div><p class="confirm-address">Cobella &amp; Co<br>215 London Road, Hazel Grove, Stockport, SK7 4HS</p><button class="primary" onclick="home()">Done</button></div>`;if(authed)adminRender()}
 let MY={bookings:[],booking:null,email:"",phone:"",busy:[],date:""};
 function customerCutoffOk(b){
   const at=new Date(`${b.date}T${b.time}:00`);
