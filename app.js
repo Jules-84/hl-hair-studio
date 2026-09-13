@@ -105,7 +105,7 @@ function addIsoDays(iso,days){
 }
 function nextDayOnlineBookingClosed(date){
   const now=ukBookingNow();
-  return (now.hour>=20) && date===addIsoDays(now.date,1);
+  return (now.hour>=12) && date===addIsoDays(now.date,1);
 }
 function dateStep(){
   let out=[],d=new Date(),cutoffHidden=false;
