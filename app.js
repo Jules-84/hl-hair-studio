@@ -794,23 +794,22 @@ function renderCustomers(){
           ?"Appointment rescheduled"
           :"Notes changed";
 
-        return `<div class="customer-row" onclick="openCustomer('${encodeURIComponent(c.phone||"")}')">
-          <div>
-            <b>${esc(c.name)}</b>
-            <br>
-            <span>${esc(c.phone||c.email||"")}</span>
-            ${hasUpdate
-              ? `<div style="margin-top:5px;font-size:11px;font-weight:700;color:#dca36b;">
-                   ● CUSTOMER UPDATE · ${updateText}
-                 </div>`
-              :""
-            }
-          </div>
+       return `<div class="customer-row" onclick="openCustomer('${encodeURIComponent(c.phone||"")}')">
+  <div style="flex:1;min-width:0">
+    <b>${esc(c.name)}</b><br>
+    <span>${esc(c.phone||c.email||"")}</span>
+    ${hasUpdate
+      ? `<div style="margin-top:5px;font-size:11px;font-weight:700;color:#dca36b;">
+          ● CUSTOMER UPDATE · ${updateText}
+        </div>`
+      :""
+    }
+  </div>
 
-          <div>
-            ${bookings.length} booking${bookings.length===1?"":"s"} · View →
-          </div>
-        </div>`;
+  <div style="margin-left:auto;text-align:right;white-space:nowrap">
+    ${bookings.length} booking${bookings.length===1?"":"s"} · View →
+  </div>
+</div>`;
       }).join("")
     : `<div class="empty-admin">No customers yet.</div>`;
 }
