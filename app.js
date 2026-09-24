@@ -622,13 +622,7 @@ function renderDiary(){
  </style><div class="visual-diary ${isPhone?"phone-timeline":""}">
    <div class="diary-toolbar">
      <button aria-label="Previous day" onclick="diaryMove(-1)">\u2039</button>
-     <div class="diary-colour-key">
-       <span><i class="key-due"></i>Deposit due</span>
-       <span><i class="key-paid"></i>Deposit paid</span>
-       <span><i class="key-update"></i>Customer update</span>
-       <span><i class="key-completed"></i>Completed</span>
-       <span><i class="key-closed"></i>Cancelled / no-show</span>
-     </div>
+     
      <div><small>APPOINTMENTS</small><h3>${nice(date)}</h3></div>
      <button aria-label="Next day" onclick="diaryMove(1)">\u203A</button>
    </div>
