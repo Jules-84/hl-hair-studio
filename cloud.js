@@ -315,7 +315,7 @@
     return true;
   }
 
-  async function updateAdminBooking(id,b){
+  async function updateAdminBooking(id,b,previous){
     if(!client)return {localOnly:true,booking:b};
     const payload={
     customer_name:b.name,
@@ -343,10 +343,10 @@ email:b.email,
     const {error:nameError}=await client
   .from("bookings")
   .update({customer_name:b.name})
-  .eq("phone",b.phone);
+  .eq("phone",previous?.phone || b.phone);
 
 if(nameError)throw nameError;
-    return {booking:mapBooking(data)};
+   return {booking:mapBooking({...data,customer_name:b.name})};
   }
 
   async function updateBookingStatus(id,status){
