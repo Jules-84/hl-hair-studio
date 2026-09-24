@@ -314,7 +314,19 @@
     if(error)throw error;
     return true;
   }
+async function deleteCustomerBookings(phone){
+  if(!client)return {localOnly:true};
+  const value=String(phone||"").trim();
+  if(!value)throw new Error("Customer mobile number is missing");
 
+  const {error}=await client
+    .from("bookings")
+    .delete()
+    .eq("phone",value);
+
+  if(error)throw error;
+  return true;
+}
   async function updateAdminBooking(id,b,previous){
     if(!client)return {localOnly:true,booking:b};
     const payload={
@@ -572,6 +584,7 @@ if(nameError)throw nameError;
     finishPasswordRecovery,
     fetchBookings,
     hideCustomer,
+    deleteCustomerBookings,
     updateDepositPaid,
     updateAdminBooking,
     adminAcknowledgeCustomerUpdate,
