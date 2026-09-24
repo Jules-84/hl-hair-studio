@@ -757,7 +757,7 @@ function manual(){
          <label style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #eee;background:#fff;color:#1f1a17 !important;-webkit-text-fill-color:#1f1a17">
               <input type="checkbox" class="manual-service" value="${x.id}">
               <span>
-               <strong style="color:#1f1a17 !important;">${esc(x.name)}</strong><br>
+               <strong style="color:#1f1a17 !important;-webkit-text-fill-color:#1f1a17 !important;display:inline-block;">TEST — ${esc(x.name)}</strong><br>
 <small style="color:#6f625b !important;">${x.duration} mins · £${x.price}</small>
               </span>
             </label>
