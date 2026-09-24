@@ -585,3 +585,11 @@ header{
 .admin-logout{margin-top:8px!important;border:1px solid rgba(255,255,255,.16)!important;background:#342c28!important;color:#fff!important;border-radius:11px!important;padding:11px 12px!important;text-align:left!important;cursor:pointer}
 .admin-logout:hover{background:#493d37!important}
 @media(max-width:700px){.admin-logout{display:block!important;flex:0 0 auto!important;min-height:44px!important;margin-top:0!important;padding:10px 14px!important;background:#5a4038!important;text-align:center!important}}
+
+
+/* Pastel diary appointment colours */
+.diary-appt.deposit-due{background:#f6dada!important;border-color:#e7b4b4!important}
+.diary-appt.deposit-paid{background:#dcefdc!important;border-color:#b7d8b7!important}
+.diary-appt.customer-update{background:#fae2c9!important;border-color:#e8bd91!important}
+.diary-appt.status-completed{background:#eadff2!important;border-color:#ceb9dd!important}
+.diary-appt.status-closed{background:#e9e5e3!important;border-color:#cec7c3!important}
