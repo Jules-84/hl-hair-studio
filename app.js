@@ -609,9 +609,10 @@ function renderDiary(){
  const laneWidth=isPhone?Math.max(250,maxCols*(colWidth+gap)+16):Math.max(660,maxCols*(colWidth+gap)+24);
 
  el.innerHTML=`<div class="visual-diary ${isPhone?"phone-timeline":""}">
+ <div class="diary-colour-key"><span class="key-due">● Deposit due</span><span class="key-paid">● Deposit paid</span><span class="key-update">● Customer update</span><span class="key-completed">● Completed</span><span class="key-closed">● Cancelled / no-show</span></div>
    <div class="diary-toolbar">
      <button aria-label="Previous day" onclick="diaryMove(-1)">\u2039</button>
-     <div class="diary-colour-key"><span class="key-due">● Deposit due</span><span class="key-paid">● Deposit paid</span><span class="key-update">● Customer update</span><span class="key-completed">● Completed</span><span class="key-closed">● Cancelled / no-show</span></div>
+     
      <div><small>APPOINTMENTS</small><h3>${nice(date)}</h3></div>
      <button aria-label="Next day" onclick="diaryMove(1)">\u203A</button>
    </div>
