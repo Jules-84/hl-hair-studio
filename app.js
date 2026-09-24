@@ -320,11 +320,27 @@ function renderMyBookings(){
   const card=b=>{
     const manageable=b.status==="confirmed"&&customerCutoffOk(b);
     const status={confirmed:"Booked",arrived:"Arrived",completed:"Completed",no_show:"No-show",cancelled:"Cancelled"}[b.status]||"Booked";
-    return `<div class="card my-booking-card"><div class="my-booking-head"><div><small>${esc(status.toUpperCase())}</small><h3>${esc(b.serviceName)}</h3></div><span class="status-pill">${status}</span></div><p><b>${nice(b.date)} at ${b.time}</b><br>${b.duration} minutes${b.pinCurls?" \u00B7 Pin Curls +\u00A32":""}</p><p>${b.price===0?"Free":"\u00A3"+b.price}${b.deposit?` \u00B7 \u00A3${b.deposit} deposit`:""}</p>${manageable?`<div class="my-booking-actions"><button onclick="startCustomerReschedule('${b.id}')">Reschedule</button></div><small class="cutoff-note">You can reschedule online up to 48 hours before your appointment.</small>`:`${b.status==="confirmed"?`<div class="cutoff-locked">This appointment is within 48 hours and can no longer be rescheduled online.</div>`:""}`}<div class="cutoff-note"><b>Need to cancel?</b> Please contact me directly. Cancellations must be made at least 48 hours before your appointment.</div></div>`;
+    return `<div class="card my-booking-card"><div class="my-booking-head"><div><small>${esc(status.toUpperCase())}</small><h3>${esc(b.serviceName)}</h3></div><span class="status-pill">${status}</span></div><p><b>${nice(b.date)} at ${b.time}</b><br>${b.duration} minutes${b.pinCurls?" \u00B7 Pin Curls +\u00A32":""}</p><p>${b.price===0?"Free":"\u00A3"+b.price}${b.deposit?` \u00B7 \u00A3${b.deposit} deposit`:""}</p>${b.notes?`<p><b>Notes:</b><br>${esc(b.notes)}</p>`:""}${b.status==="confirmed"?`<div class="my-booking-actions">${manageable?`<button onclick="startCustomerReschedule('${b.id}')">Reschedule</button>`:""}<button onclick="startCustomerNotes('${b.id}')">Edit notes</button></div>`:""}${manageable?`<small class="cutoff-note">You can reschedule online up to 48 hours before your appointment.</small>`:`${b.status==="confirmed"?`<div class="cutoff-locked">This appointment is within 48 hours and can no longer be rescheduled online.</div>`:""}`}<div class="cutoff-note"><b>Need to cancel?</b> Please contact me directly. Cancellations must be made at least 48 hours before your appointment.</div></div>`;
   };
   list.innerHTML=`${upcoming.length?`<h3 class="manage-section-title">Upcoming appointments</h3>${upcoming.map(card).join("")}`:"<div class='card'>No upcoming appointments.</div>"}${past.length?`<h3 class="manage-section-title">Previous appointments</h3>${past.map(card).join("")}`:""}`;
 }
 function renderMyBooking(){renderMyBookings()}
+function startCustomerNotes(id){
+  const b=(MY.bookings||[]).find(x=>x.id===id);if(!b)return toast("Booking not found");
+  MY.booking=b;
+  const list=document.querySelector("#mineList");if(!list)return;
+  list.innerHTML=`<div class="card"><button class="text-back" onclick="renderMyBookings()">← Back</button><h3>Edit notes</h3><p>${esc(b.serviceName)}<br><small>${nice(b.date)} at ${b.time}</small></p><div class="form"><textarea id="customerBookingNotes" placeholder="Add a note for your appointment">${esc(b.notes||"")}</textarea><button class="primary" onclick="saveCustomerNotes()">Save notes</button></div></div>`;
+}
+async function saveCustomerNotes(){
+  const b=MY.booking;if(!b)return;
+  const notes=(document.querySelector("#customerBookingNotes")?.value||"").trim();
+  try{
+    if(!window.CloudDB?.enabled()||typeof CloudDB.customerUpdateNotes!=="function")throw new Error("Online notes update is unavailable");
+    const updated=await CloudDB.customerUpdateNotes(b.id,MY.email,MY.phone,notes);
+    if(updated){MY.booking=updated;MY.bookings=MY.bookings.map(x=>x.id===updated.id?updated:x)}
+    renderMyBookings();toast("Notes updated");
+  }catch(err){console.error(err);toast("Could not update notes")}
+}
 function startCustomerReschedule(id){
   const b=(MY.bookings||[]).find(x=>x.id===id);if(!b)return toast("Booking not found");MY.booking=b;
   if(!customerCutoffOk(b))return toast("This booking is inside the 48-hour rescheduling window");
