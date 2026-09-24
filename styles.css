@@ -639,3 +639,37 @@ header{
   justify-content:flex-start;
   min-width:0;
 }
+
+
+/* Diary colour key beside View date */
+.diary-date-row{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:20px !important;
+}
+
+.diary-top-key{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  flex-wrap:wrap;
+  font-size:11px;
+  font-weight:700;
+  line-height:1.2;
+}
+
+.diary-top-key span{
+  white-space:nowrap;
+}
+
+.diary-top-key .key-due{color:#d78f8f;}
+.diary-top-key .key-paid{color:#86b986;}
+.diary-top-key .key-update{color:#dca36b;}
+.diary-top-key .key-completed{color:#ad8fc2;}
+.diary-top-key .key-closed{color:#9d9591;}
+
+.diary-date-row > label{
+  flex:0 0 auto;
+  margin-left:auto;
+}
