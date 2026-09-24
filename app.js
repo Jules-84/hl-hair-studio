@@ -753,7 +753,7 @@ function manual(){
       <div>
         <strong>Services</strong>
         <div style="margin-top:10px;max-height:300px;overflow-y:auto">
-          ${S.services.map(x=>`
+         ${S.services.map(x=>{ console.log("ADMIN SERVICE:",x); return `
          <div style="display:flex;align-items:center;gap:12px;padding:14px 8px;border-bottom:1px solid #eee;background:#fff">
   <input type="checkbox" class="manual-service" value="${x.id}" style="width:20px;height:20px;flex:none">
   <div style="display:block;color:#1f1a17">
@@ -761,7 +761,7 @@ function manual(){
     <div style="display:block;color:#6f625b;margin-top:3px">${x.duration} mins · £${x.price}</div>
   </div>
 </div>
-          `).join("")}
+         `}).join("")}
         </div>
       </div>
 
