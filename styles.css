@@ -593,3 +593,28 @@ header{
 .diary-appt.customer-update{background:#fae2c9!important;border-color:#e8bd91!important}
 .diary-appt.status-completed{background:#eadff2!important;border-color:#ceb9dd!important}
 .diary-appt.status-closed{background:#e9e5e3!important;border-color:#cec7c3!important}
+/* Diary colour key */
+.diary-colour-key{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  flex-wrap:wrap;
+  font-size:11px;
+  font-weight:700;
+  line-height:1.2;
+}
+
+.diary-colour-key span{white-space:nowrap}
+
+.diary-colour-key .key-due{color:#d78f8f}
+.diary-colour-key .key-paid{color:#86b986}
+.diary-colour-key .key-update{color:#dca36b}
+.diary-colour-key .key-completed{color:#ad8fc2}
+.diary-colour-key .key-closed{color:#9d9591}
+
+@media(max-width:700px){
+  .diary-colour-key{
+    display:none;
+  }
+}
