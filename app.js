@@ -65,7 +65,7 @@ function selectedBasePrice(){
   return selectedServices().reduce((total,service)=>total+Number(service.price||0),0);
 }
 function selectedDeposit(){
-  return selectedServices().reduce((total,service)=>total+depositFor(service),0);
+  return depositFor(selectedServices()[0]);
 }
 function selectedServiceSnapshots(){
   return selectedServices().map(service=>({
@@ -76,6 +76,64 @@ function selectedServiceSnapshots(){
     deposit:depositFor(service),
     pinCurls:service.id===W.service?.id?!!W.pinCurls:false
   }));
+}
+
+
+function isExtensionFitting(service){
+  if(!service)return false;
+  if(service.id==="ext_remove"||service.id==="ext_consult")return false;
+  if(service.category==="Extensions")return true;
+  return /^feat_weave/.test(service.id||"");
+}
+function extensionRemovalService(){
+  return S.services.find(s=>s.id==="ext_remove")||S.services.find(s=>(s.name||"").toLowerCase()==="extension removal");
+}
+function hasSelectedService(id){
+  return selectedServices().some(s=>s.id===id);
+}
+function addSelectedService(service){
+  if(!service||hasSelectedService(service.id))return;
+  W.services=[...selectedServices(),service];
+}
+function showExtensionRemovalPrompt(nextAction){
+  W.extensionNext=nextAction;
+  $("#bookbody").innerHTML=`<div class="bookcard addon-step"><span class="eyebrow-small">Extensions</span><h2>Do you require removal of extensions?</h2><p class="category-help">Choose an option before continuing with your booking.</p><div class="pin-options"><button class="pin-option" onclick="chooseExtensionRemoval(false)"><div><b>No</b><small>Continue without extension removal</small></div><strong>No extra charge</strong></button><button class="pin-option featured-addon" onclick="chooseExtensionRemoval(true)"><div><b>Yes</b><small>Add Extension Removal · 20 mins</small></div><strong>+£10</strong></button></div></div>`;
+}
+function chooseExtensionRemoval(yes){
+  if(yes){
+    const removal=extensionRemovalService();
+    if(removal)addSelectedService(removal);
+  }
+  const next=W.extensionNext;
+  W.extensionNext=null;
+  if(next==="primary-pin"){W.step=3;bookRender();return}
+  W.step=4;bookRender();
+}
+function openAdditionalServices(){
+  $("#bookbody").innerHTML=`<div class="bookcard"><button class="text-back" onclick="W.step=4;bookRender()">← Back</button><h2>Add another service</h2><p class="category-help">Choose another service to include in this appointment.</p>${categoryMarkup("addAdditionalService")}</div>`;
+}
+function addAdditionalService(id){
+  const service=S.services.find(s=>s.id===id);
+  if(!service)return;
+  if(hasSelectedService(id))return toast("That service is already selected");
+  addSelectedService(service);
+  W.date=null;W.time=null;W.cloudBusy=[];
+  if(isExtensionFitting(service)){showExtensionRemovalPrompt("additional");return}
+  W.step=4;bookRender();
+}
+function removeAdditionalService(id){
+  if(id==="ext_remove"){
+    W.services=selectedServices().filter(s=>s.id!=="ext_remove");
+  }else{
+    W.services=selectedServices().filter(s=>s.id!==id);
+  }
+  if(!W.services.length&&W.service)W.services=[W.service];
+  W.date=null;W.time=null;W.cloudBusy=[];
+  W.step=4;bookRender();
+}
+function selectedServicesSummary(){
+  const items=selectedServices();
+  return `<div class="summary" style="margin-bottom:16px">${items.map((s,i)=>`<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;${i?"margin-top:12px":""}"><span><b>${esc(s.name)}</b><br><small>${durationText(s.duration)} · ${s.price===0?"Free":"£"+s.price}</small></span>${i?`<button type="button" class="text-back" onclick="removeAdditionalService('${s.id}')">Remove</button>`:""}</div>`).join("")}${items.length>1?`<div style="margin-top:14px"><b>Total appointment time: ${durationText(selectedDuration())}</b><br><small>Service total: £${selectedBasePrice()+(W.pinCurls?2:0)}</small></div>`:""}</div>`;
 }
 
 function bookingStart(){
@@ -91,8 +149,12 @@ async function startService(id){
   W.service=S.services.find(x=>x.id===id);
   W.services=W.service?[W.service]:[];
   W.category=W.service?.category;
-  W.step=supportsPinCurls(W.service)?3:4;
-  bookRender();
+  if(isExtensionFitting(W.service)){
+    showExtensionRemovalPrompt(supportsPinCurls(W.service)?"primary-pin":"primary-date");
+  }else{
+    W.step=supportsPinCurls(W.service)?3:4;
+    bookRender();
+  }
   scrollTo(0,0);
 }
 function back(){
@@ -122,39 +184,7 @@ function bookRender(){
 function pickCategory(cat){W.category=cat;W.step=2;bookRender()}
 function pinCurlStep(){let x=W.service;$("#bookbody").innerHTML=`<div class="bookcard addon-step"><span class="eyebrow-small">${esc(x.name)}</span><h2>Would you like to add pin curls?</h2><p class="category-help">Choose an option before selecting your appointment date.</p><div class="pin-options"><button class="pin-option" onclick="choosePinCurls(false)"><div><b>No thanks</b><small>Continue with ${esc(x.name)}</small></div><strong>\u00A3${x.price}</strong></button><button class="pin-option featured-addon" onclick="choosePinCurls(true)"><div><b>Add Pin Curls</b><small>Add pin curls to your blow dry</small></div><strong>+\u00A32</strong></button></div></div>`}
 function choosePinCurls(v){W.pinCurls=!!v;W.step=4;bookRender()}
-function pickService(id){W.service=S.services.find(x=>x.id===id);W.services=W.service?[W.service]:[];W.category=W.service.category;W.pinCurls=false;W.step=supportsPinCurls(W.service)?3:4;bookRender()}
-
-function openSecondServiceChooser(){
-  const currentIds=new Set((W.services||[]).map(s=>s.id));
-  $("#bookbody").innerHTML=`<div class="bookcard"><button class="text-back" onclick="bookRender()">← Back</button><h2>Add another service</h2><p class="category-help">Choose another service to include in this appointment.</p><div class="book-category-grid">${CATEGORY_ORDER.map(cat=>`<button class="book-category-card" onclick="openSecondServiceCategory('${cat.replace(/'/g,"\\'")}')"><span>${esc(cat)}</span><b>›</b></button>`).join("")}</div></div>`;
-}
-function openSecondServiceCategory(category){
-  const currentIds=new Set((W.services||[]).map(s=>s.id));
-  const list=S.services.filter(s=>s.category===category&&!currentIds.has(s.id));
-  $("#bookbody").innerHTML=`<div class="bookcard"><button class="text-back" onclick="openSecondServiceChooser()">← Back</button><span class="eyebrow-small">${esc(category)}</span><h2>Choose another service</h2><div class="choices">${list.length?list.map(s=>`<button class="choice service-choice" onclick="selectSecondService('${s.id}')"><span><b>${esc(s.name)}</b><small>${durationText(s.duration)}${s.note?` · ${esc(s.note)}`:""}</small></span><strong>${s.price===0?"Free":"£"+s.price}</strong></button>`).join(""):`<p>All services in this category are already selected.</p>`}</div></div>`;
-}
-function selectSecondService(id){
-  const extra=S.services.find(s=>s.id===id);
-  if(!extra)return;
-  if(!(W.services||[]).some(s=>s.id===extra.id))W.services=[...(W.services||[W.service]),extra];
-  W.date=null;W.time=null;W.cloudBusy=[];
-  W.step=4;
-  bookRender();
-}
-function removeExtraService(id){
-  W.services=(W.services||[]).filter(s=>s.id!==id);
-  if(!W.services.length&&W.service)W.services=[W.service];
-  W.date=null;W.time=null;W.cloudBusy=[];
-  W.step=4;
-  bookRender();
-}
-function bookingDuration(){
-  return (W.services&&W.services.length?W.services:[W.service]).filter(Boolean).reduce((n,s)=>n+Number(s.duration||0),0);
-}
-function selectedServicesForDate(){
-  const items=(W.services&&W.services.length?W.services:[W.service]).filter(Boolean);
-  return `<div class="summary" style="margin-bottom:16px">${items.map((s,i)=>`<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;${i?"margin-top:10px":""}"><span><b>${esc(s.name)}</b><br><small>${durationText(s.duration)}</small></span>${i?`<button type="button" class="text-back" onclick="removeExtraService('${s.id}')">Remove</button>`:""}</div>`).join("")}${items.length>1?`<div style="margin-top:12px"><b>Total appointment time: ${durationText(bookingDuration())}</b></div>`:""}</div>`;
-}
+function pickService(id){W.service=S.services.find(x=>x.id===id);W.services=W.service?[W.service]:[];W.category=W.service.category;W.pinCurls=false;if(isExtensionFitting(W.service)){showExtensionRemovalPrompt(supportsPinCurls(W.service)?"primary-pin":"primary-date");return}W.step=supportsPinCurls(W.service)?3:4;bookRender()}
 
 function ukBookingNow(){
   const parts=new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/London",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date());
@@ -187,7 +217,7 @@ function dateStep(){
     out.push(`<button class="choice" onclick="pickDate('${iso}')">${label}</button>`);
   }
   const lastMinuteNote=`<div class="deposit-notice" style="margin-top:16px"><b>Need an appointment within the next 24 hours?</b><br><span>Online bookings close 24 hours before each appointment time, but I may still have last-minute availability. Choose your date and look for <b> Tap to contact </b> on the available times, or contact me directly and I'll do my best to accommodate you.</span></div>`;
-  $("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a date</h2>${selectedServicesForDate()}<button type="button" class="primary full" style="margin:0 0 16px" onclick="openSecondServiceChooser()">+ Add another service</button><div class="dates">${out.join("")}</div>${lastMinuteNote}</div>`;
+  $("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a date</h2>${selectedServicesSummary()}<button type="button" class="primary full" style="margin:0 0 16px" onclick="openAdditionalServices()">+ Add another service</button><div class="dates">${out.join("")}</div>${lastMinuteNote}</div>`;
 }
 async function pickDate(d){
   W.date=d;W.cloudBusy=[];
@@ -196,7 +226,7 @@ async function pickDate(d){
 }
 function overlap(t,d,b,bd){return mins(t)<mins(b)+bd&&mins(b)<mins(t)+d}
 function bookingBlocksTime(b){return !["cancelled","no_show"].includes(b.status||"confirmed")}
-function slots(){let h=S.hours[new Date(W.date+"T12:00").getDay()],o=[],duration=bookingDuration();for(let m=mins(h.start);m+duration<=mins(h.end);m+=30){let t=ts(m),busy=S.bookings.some(b=>bookingBlocksTime(b)&&b.date===W.date&&overlap(t,duration,b.time,b.duration)),cloud=(W.cloudBusy||[]).some(b=>overlap(t,duration,b.time,b.duration)),block=S.blocks.some(b=>b.date===W.date&&overlap(t,duration,b.start,mins(b.end)-mins(b.start)));if(!busy&&!cloud&&!block)o.push(t)}return o}
+function slots(){let h=S.hours[new Date(W.date+"T12:00").getDay()],o=[],duration=selectedDuration();for(let m=mins(h.start);m+duration<=mins(h.end);m+=30){let t=ts(m),busy=S.bookings.some(b=>bookingBlocksTime(b)&&b.date===W.date&&overlap(t,duration,b.time,b.duration)),cloud=(W.cloudBusy||[]).some(b=>overlap(t,duration,b.time,b.duration)),block=S.blocks.some(b=>b.date===W.date&&overlap(t,duration,b.start,mins(b.end)-mins(b.start)));if(!busy&&!cloud&&!block)o.push(t)}return o}
 function timeStep(){
   const available=slots();
   const buttons=available.map(t=>within24Hours(W.date,t)?`<button class="choice cutoff-date" onclick="lastMinuteContactMessage('${W.date}','${t}')"><span>${t}</span><small style="display:block;margin-top:4px"><b>Last-minute</b><br>Tap to contact</small></button>`:`<button class="choice" onclick="pickTime('${t}')">${t}</button>`).join("");
