@@ -49,8 +49,37 @@ function depositFor(service){
   return service.category==="Colour" ? 20 : 10;
 }
 function supportsPinCurls(service){return !!service && (service.name||"").toLowerCase().includes("blow dry")}
+
+// Multi-service foundation.
+// These helpers do not change the visible booking flow yet.
+// They give the next step one reliable place to calculate combined duration,
+// price and deposits when customers can choose more than one service.
+function selectedServices(){
+  if(Array.isArray(W.services)&&W.services.length)return W.services;
+  return W.service?[W.service]:[];
+}
+function selectedDuration(){
+  return selectedServices().reduce((total,service)=>total+Number(service.duration||0),0);
+}
+function selectedBasePrice(){
+  return selectedServices().reduce((total,service)=>total+Number(service.price||0),0);
+}
+function selectedDeposit(){
+  return selectedServices().reduce((total,service)=>total+depositFor(service),0);
+}
+function selectedServiceSnapshots(){
+  return selectedServices().map(service=>({
+    id:service.id,
+    name:service.name,
+    duration:Number(service.duration||0),
+    price:Number(service.price||0),
+    deposit:depositFor(service),
+    pinCurls:service.id===W.service?.id?!!W.pinCurls:false
+  }));
+}
+
 function bookingStart(){
-  W={step:1,category:null,pinCurls:false};
+  W={step:1,category:null,pinCurls:false,services:[]};
   home();
   const h=$("#home");if(h)h.scrollIntoView({behavior:"smooth",block:"start"});
 }
@@ -58,8 +87,9 @@ async function startService(id){
   await syncCloudAvailability(false);
   hideCustomer();
   $("#booking").classList.remove("hide");
-  W={step:1,category:null,pinCurls:false};
+  W={step:1,category:null,pinCurls:false,services:[]};
   W.service=S.services.find(x=>x.id===id);
+  W.services=W.service?[W.service]:[];
   W.category=W.service?.category;
   W.step=supportsPinCurls(W.service)?3:4;
   bookRender();
@@ -74,7 +104,7 @@ function back(){
 }
 
 function bookingBack(){
-  W={step:1,category:null,pinCurls:false};
+  W={step:1,category:null,pinCurls:false,services:[]};
   home();
   const h=$("#home");if(h)h.scrollIntoView({behavior:"smooth",block:"start"});
 }
@@ -92,7 +122,7 @@ function bookRender(){
 function pickCategory(cat){W.category=cat;W.step=2;bookRender()}
 function pinCurlStep(){let x=W.service;$("#bookbody").innerHTML=`<div class="bookcard addon-step"><span class="eyebrow-small">${esc(x.name)}</span><h2>Would you like to add pin curls?</h2><p class="category-help">Choose an option before selecting your appointment date.</p><div class="pin-options"><button class="pin-option" onclick="choosePinCurls(false)"><div><b>No thanks</b><small>Continue with ${esc(x.name)}</small></div><strong>\u00A3${x.price}</strong></button><button class="pin-option featured-addon" onclick="choosePinCurls(true)"><div><b>Add Pin Curls</b><small>Add pin curls to your blow dry</small></div><strong>+\u00A32</strong></button></div></div>`}
 function choosePinCurls(v){W.pinCurls=!!v;W.step=4;bookRender()}
-function pickService(id){W.service=S.services.find(x=>x.id===id);W.category=W.service.category;W.pinCurls=false;W.step=supportsPinCurls(W.service)?3:4;bookRender()}
+function pickService(id){W.service=S.services.find(x=>x.id===id);W.services=W.service?[W.service]:[];W.category=W.service.category;W.pinCurls=false;W.step=supportsPinCurls(W.service)?3:4;bookRender()}
 
 function ukBookingNow(){
   const parts=new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/London",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date());
