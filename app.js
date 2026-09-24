@@ -124,6 +124,21 @@ function pinCurlStep(){let x=W.service;$("#bookbody").innerHTML=`<div class="boo
 function choosePinCurls(v){W.pinCurls=!!v;W.step=4;bookRender()}
 function pickService(id){W.service=S.services.find(x=>x.id===id);W.services=W.service?[W.service]:[];W.category=W.service.category;W.pinCurls=false;W.step=supportsPinCurls(W.service)?3:4;bookRender()}
 
+function openSecondServiceChooser(){
+  const current=W.service;
+  const cats=[...new Set(S.services.filter(s=>s.id!==current?.id).map(s=>s.category))];
+  $("#bookbody").innerHTML=`<div class="bookcard"><button class="text-back" onclick="bookRender()">← Back</button><h2>Add another service</h2><p>Choose a category</p><div class="category-grid">${cats.map(c=>`<button type="button" class="category-card" onclick="openSecondServiceCategory('${String(c).replace(/'/g,"\\'")}')">${esc(c)}</button>`).join("")}</div></div>`;
+}
+function openSecondServiceCategory(category){
+  const list=S.services.filter(s=>s.category===category&&s.id!==W.service?.id);
+  $("#bookbody").innerHTML=`<div class="bookcard"><button class="text-back" onclick="openSecondServiceChooser()">← Back</button><h2>${esc(category)}</h2><div class="service-list">${list.map(s=>`<button type="button" class="service-card" onclick="previewSecondService('${String(s.id).replace(/'/g,"\\'")}')"><span><b>${esc(s.name)}</b><small>${durationText(s.duration)}</small></span><strong>${s.price===0?"Free":"£"+s.price}</strong></button>`).join("")}</div></div>`;
+}
+function previewSecondService(id){
+  const extra=S.services.find(s=>s.id===id);
+  if(!extra)return;
+  $("#bookbody").innerHTML=`<div class="bookcard"><button class="text-back" onclick="openSecondServiceCategory('${String(extra.category).replace(/'/g,"\\'")}')">← Back</button><h2>Selected services</h2><div class="summary"><div><b>${esc(W.service.name)}</b><br><small>${durationText(W.service.duration)}</small></div><div style="margin-top:12px"><b>${esc(extra.name)}</b><br><small>${durationText(extra.duration)}</small></div></div><p style="margin-top:16px">This is a selector test only. No booking totals or appointment times have been changed yet.</p><button type="button" class="primary full" onclick="bookRender()">Back to booking</button></div>`;
+}
+
 function ukBookingNow(){
   const parts=new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/London",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date());
   const v=Object.fromEntries(parts.filter(x=>x.type!=="literal").map(x=>[x.type,x.value]));
@@ -155,7 +170,7 @@ function dateStep(){
     out.push(`<button class="choice" onclick="pickDate('${iso}')">${label}</button>`);
   }
   const lastMinuteNote=`<div class="deposit-notice" style="margin-top:16px"><b>Need an appointment within the next 24 hours?</b><br><span>Online bookings close 24 hours before each appointment time, but I may still have last-minute availability. Choose your date and look for <b> Tap to contact </b> on the available times, or contact me directly and I'll do my best to accommodate you.</span></div>`;
-  $("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a date</h2><p>${esc(W.service.name)}</p><div class="dates">${out.join("")}</div>${lastMinuteNote}</div>`;
+  $("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a date</h2><p>${esc(W.service.name)}</p><button type="button" class="primary full" style="margin:0 0 16px" onclick="openSecondServiceChooser()">+ Add another service</button><div class="dates">${out.join("")}</div>${lastMinuteNote}</div>`;
 }
 async function pickDate(d){
   W.date=d;W.cloudBusy=[];
