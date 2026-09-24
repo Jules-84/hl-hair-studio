@@ -690,3 +690,28 @@ header{
   flex:0 0 auto;
   margin-left:auto;
 }
+
+
+/* Customers list - tidy full-width rows */
+#customerList .customer-row{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+  padding:16px 0 !important;
+  border-bottom:1px solid #dfcfc3 !important;
+  gap:20px !important;
+}
+
+#customerList .customer-row > div:first-child{
+  flex:1 1 auto !important;
+  min-width:0 !important;
+}
+
+#customerList .customer-row > div:last-child{
+  flex:0 0 auto !important;
+  margin-left:auto !important;
+  text-align:right !important;
+  white-space:nowrap !important;
+}
