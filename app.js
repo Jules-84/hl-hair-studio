@@ -64,8 +64,13 @@ function selectedDuration(){
 function selectedBasePrice(){
   return selectedServices().reduce((total,service)=>total+Number(service.price||0),0);
 }
+function bookingDepositForTotal(total){
+  total=Number(total||0);
+  if(total<=0)return 0;
+  return total>50?20:10;
+}
 function selectedDeposit(){
-  return depositFor(selectedServices()[0]);
+  return bookingDepositForTotal(selectedBasePrice()+(W.pinCurls?2:0));
 }
 function selectedServiceSnapshots(){
   return selectedServices().map(service=>({
@@ -582,7 +587,7 @@ function renderDiary(){
       <b>${x.time} \u2013 ${eh}:${String(em).padStart(2,"0")} \u00B7 ${esc(x.name)}</b>
       <span>${esc(x.serviceName||x.service||"Appointment")}${x.pinCurls?" \u00B7 Pin Curls":""}</span>
       <em class="appt-status status-${x.status||"confirmed"}">${statusLabel}</em>
-      ${d>=45?`<small>${depositLabel}</small>`:""}
+      <small><b>${Number(x.price||0)===0?"Free":"£"+Number(x.price||0)}</b>${Number(x.deposit)?` · ${depositLabel}`:" · No deposit"}</small>
    </button>`;
  }).join("");
  const laneWidth=isPhone?Math.max(250,maxCols*(colWidth+gap)+16):Math.max(660,maxCols*(colWidth+gap)+24);
@@ -617,7 +622,7 @@ function openDiaryBooking(id){
    : `<div class="deposit-no-payment">No deposit required</div>`;
  const status=b.status||"confirmed";
  const statusHtml=`<div class="appointment-status-control"><label>Appointment status<select onchange="setAppointmentStatus('${b.id}',this.value)"><option value="confirmed" ${status==="confirmed"?"selected":""}>Booked</option><option value="arrived" ${status==="arrived"?"selected":""}>Arrived</option><option value="completed" ${status==="completed"?"selected":""}>Completed</option><option value="no_show" ${status==="no_show"?"selected":""}>No-show</option><option value="cancelled" ${status==="cancelled"?"selected":""}>Cancelled</option></select></label></div>`;
- modal(`<h2>${esc(b.name)}</h2><div class="summary"><b>${esc(b.serviceName||b.service||"Appointment")}</b>${b.pinCurls?"<br>+ Pin Curls":""}<br>${nice(b.date)} at ${b.time}<br>${esc(b.phone||"")}${b.email?`<br>${esc(b.email)}`:""}${b.notes?`<br><br>Notes: ${esc(b.notes)}`:""}</div><button class="primary full" style="margin:14px 0" onclick="openAdminBookingEditor('${b.id}')">Edit appointment</button>${statusHtml}${depositHtml}`);
+ modal(`<h2>${esc(b.name)}</h2><div class="summary"><b>${esc(b.serviceName||b.service||"Appointment")}</b>${b.pinCurls?"<br>+ Pin Curls":""}<br>${nice(b.date)} at ${b.time}<br><b>Total: ${Number(b.price||0)===0?"Free":"£"+Number(b.price||0)}</b><br>${esc(b.phone||"")}${b.email?`<br>${esc(b.email)}`:""}${b.notes?`<br><br>Notes: ${esc(b.notes)}`:""}</div><button class="primary full" style="margin:14px 0" onclick="openAdminBookingEditor('${b.id}')">Edit appointment</button>${statusHtml}${depositHtml}`);
 }
 
 function adminBookingServices(b){
@@ -657,6 +662,7 @@ async function saveAdminBookingEdit(id){
   const duration=services.reduce((n,s)=>n+Number(s.duration||0),0);
   const basePrice=services.reduce((n,s)=>n+Number(s.price||0),0);
   const price=basePrice+(b.pinCurls?2:0);
+  const deposit=bookingDepositForTotal(price);
   const primary=services[0];
   const snapshots=services.map(s=>({id:s.id,name:s.name,duration:Number(s.duration||0),price:Number(s.price||0),deposit:depositFor(s),pinCurls:s.id===primary.id?!!b.pinCurls:false}));
 
@@ -674,7 +680,7 @@ async function saveAdminBookingEdit(id){
   }
 
   const previous=structuredClone(b);
-  const next={...b,serviceId:primary.id,serviceName:services.map(s=>s.name).join(" + "),date,time,duration,price,basePrice,notes,services:snapshots};
+  const next={...b,serviceId:primary.id,serviceName:services.map(s=>s.name).join(" + "),date,time,duration,price,basePrice,deposit,notes,services:snapshots};
   Object.assign(b,next);save();renderDiary();
 
   try{
@@ -724,7 +730,7 @@ async function adminCancel(id){let b=S.bookings.find(x=>x.id===id);if(!b||!confi
 function modal(html){$("#modalbody").innerHTML=html;const m=$("#modal"),box=m?.querySelector(".modalbox");if(box){box.style.maxHeight="calc(100dvh - 36px)";box.style.overflowY="auto";box.style.overscrollBehavior="contain";box.style.webkitOverflowScrolling="touch"}m?.classList.remove("hide")} function closeModal(){$("#modal").classList.add("hide")}
 function manual(){modal(`<h2>Add booking</h2><div class="form"><select id="ms">${S.services.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`)}</select><input id="mn" placeholder="Customer name"><input id="mp" placeholder="Mobile"><input id="md" type="date" value="${$("#diaryDate").value}"><input id="mt" type="time" value="09:00"><textarea id="mnotes" placeholder="Notes"></textarea><button class="primary" onclick="manualSave()">Save</button></div>`)}
 async function manualSave(){
-  let x=S.services.find(s=>s.id===$("#ms").value),booking={id:uid(),name:$("#mn").value||"Customer",phone:$("#mp").value,notes:$("#mnotes").value,email:"",serviceId:x.id,serviceName:x.name,date:$("#md").value,time:$("#mt").value,duration:x.duration,price:x.price,basePrice:x.price,deposit:depositFor(x),depositPaid:false,pinCurls:false,status:"confirmed",bookingRef:bookingRef()};
+  let x=S.services.find(s=>s.id===$("#ms").value),booking={id:uid(),name:$("#mn").value||"Customer",phone:$("#mp").value,notes:$("#mnotes").value,email:"",serviceId:x.id,serviceName:x.name,date:$("#md").value,time:$("#mt").value,duration:x.duration,price:x.price,basePrice:x.price,deposit:bookingDepositForTotal(x.price),depositPaid:false,pinCurls:false,status:"confirmed",bookingRef:bookingRef()};
   if(!booking.date||!booking.time)return toast("Choose a date and time");
 
   const clashes=S.bookings.filter(b=>bookingBlocksTime(b)&&b.date===booking.date&&overlap(booking.time,booking.duration,b.time,Number(b.duration||60)));
@@ -745,7 +751,7 @@ async function manualSave(){
   S.bookings.push(booking);save();closeModal();await syncAdminBookings();adminRender();toast("Booking saved");
 }
 function renderCustomers(){let m={};S.bookings.filter(b=>!b.customerHidden).forEach(b=>{let k=b.phone||b.email||b.name;m[k]=m[k]||{name:b.name,phone:b.phone,email:b.email||"",count:0};m[k].count++});$("#customerList").innerHTML=Object.values(m).map(c=>`<div class="adminrow customer-row" onclick="openCustomer('${encodeURIComponent(c.phone)}')"><div><b>${esc(c.name)}</b><br>${esc(c.phone)}</div><small>${c.count} booking(s) \u00B7 View \u2192</small></div>`).join("")||"No customers yet."}
-function openCustomer(encodedPhone){const phone=decodeURIComponent(encodedPhone),rows=S.bookings.filter(b=>b.phone===phone).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));if(!rows.length)return;const c=rows[0],up=rows.filter(b=>b.status!=="cancelled"&&b.date>=today()),past=rows.filter(b=>b.date<today()||["cancelled","no_show","completed"].includes(b.status));const card=b=>`<div class="customer-booking-detail"><div><b>${esc(b.serviceName)}</b><br><span>${nice(b.date)} at ${b.time}</span><br><small>${b.status==="cancelled"?"Cancelled":b.status==="completed"?"Completed":b.status==="no_show"?"No-show":"Booked"}${b.bookingRef?` \u00B7 Ref ${esc(b.bookingRef)}`:""}</small></div><div><b>${b.price===0?"Free":"\u00A3"+b.price}</b>${b.deposit?`<br><small>Deposit ${b.depositPaid?"paid":"due"}</small>`:""}</div></div>`;modal(`<div class="customer-profile"><span class="admin-kicker">CUSTOMER</span><h2>${esc(c.name)}</h2><div class="customer-contact"><b>Mobile</b><span>${esc(c.phone||"\u2014")}</span><b>Email</b><span>${esc(c.email||"\u2014")}</span></div><h3>Upcoming appointments</h3>${up.length?up.map(card).join(""):"<p>No upcoming appointments.</p>"}<h3>Booking history</h3>${past.length?past.map(card).join(""):"<p>No previous appointments.</p>"}<div style="margin-top:24px"><button class="danger-btn" onclick="deleteCustomer('${encodeURIComponent(phone)}')">Delete customer</button><p class="muted" style="margin-top:8px">Removes this person from your Customers list. Their appointment history is kept.</p></div></div>`) }
+function openCustomer(encodedPhone){const phone=decodeURIComponent(encodedPhone),rows=S.bookings.filter(b=>b.phone===phone).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));if(!rows.length)return;const c=rows[0],up=rows.filter(b=>b.status!=="cancelled"&&b.date>=today()),past=rows.filter(b=>b.date<today()||["cancelled","no_show","completed"].includes(b.status));const card=b=>`<div class="customer-booking-detail"><div><b>${esc(b.serviceName)}</b><br><span>${nice(b.date)} at ${b.time}</span><br><small>${b.status==="cancelled"?"Cancelled":b.status==="completed"?"Completed":b.status==="no_show"?"No-show":"Booked"}${b.bookingRef?` · Ref ${esc(b.bookingRef)}`:""}</small></div><div style="text-align:right"><b>${b.price===0?"Free":"£"+b.price}</b>${b.deposit?`<br><small>Deposit ${b.depositPaid?"paid":"due"}</small>`:""}<br><button type="button" class="text-back" style="margin-top:8px" onclick="event.stopPropagation();openAdminBookingEditor('${b.id}')">Edit</button></div></div>`;modal(`<div class="customer-profile"><span class="admin-kicker">CUSTOMER</span><h2>${esc(c.name)}</h2><div class="customer-contact"><b>Mobile</b><span>${esc(c.phone||"\u2014")}</span><b>Email</b><span>${esc(c.email||"\u2014")}</span></div><h3>Upcoming appointments</h3>${up.length?up.map(card).join(""):"<p>No upcoming appointments.</p>"}<h3>Booking history</h3>${past.length?past.map(card).join(""):"<p>No previous appointments.</p>"}<div style="margin-top:24px"><button class="danger-btn" onclick="deleteCustomer('${encodeURIComponent(phone)}')">Delete customer</button><p class="muted" style="margin-top:8px">Removes this person from your Customers list. Their appointment history is kept.</p></div></div>`) }
 async function deleteCustomer(encodedPhone){const phone=decodeURIComponent(encodedPhone),rows=S.bookings.filter(b=>b.phone===phone);if(!rows.length)return;const name=rows[0].name||"this customer";if(!confirm(`Delete ${name} from your Customers list?\n\nTheir appointment and booking history will be kept.`))return;try{if(window.CloudDB?.enabled()&&typeof CloudDB.hideCustomer==="function")await CloudDB.hideCustomer(phone);S.bookings.forEach(b=>{if(b.phone===phone)b.customerHidden=true});save();closeModal();renderCustomers();toast("Customer deleted from list")}catch(err){console.error(err);toast("Could not delete customer")}}
 
 function renderGalleryAdmin(){
