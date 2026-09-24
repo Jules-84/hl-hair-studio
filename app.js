@@ -813,6 +813,30 @@ function renderCustomers(){
       }).join("")
     : `<div class="empty-admin">No customers yet.</div>`;
 }
+async function acknowledgeCustomerUpdate(id){
+  const b=S.bookings.find(x=>x.id===id);
+  if(!b)return;
+
+  try{
+    const updated=await CloudDB.adminAcknowledgeCustomerUpdate(id);
+
+    if(updated){
+      Object.assign(b,updated);
+    }else{
+      b.customerUpdate=false;
+      b.customerUpdateType="";
+    }
+
+    save();
+    adminRender();
+    closeModal();
+    toast("Customer update marked as seen");
+  }catch(e){
+    console.error(e);
+    toast("Could not clear customer update");
+  }
+}
+
 function openCustomer(encodedPhone){
   const phone=decodeURIComponent(encodedPhone),
   rows=S.bookings.filter(b=>b.phone===phone).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));
