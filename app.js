@@ -746,27 +746,123 @@ async function setDepositPaid(id,paid){
 }
 async function adminCancel(id){let b=S.bookings.find(x=>x.id===id);if(!b||!confirm("Cancel appointment?"))return;try{if(window.CloudDB?.enabled())await CloudDB.cancelBooking(id)}catch(e){console.error(e);return toast("Could not cancel online")}b.status="cancelled";save();adminRender()}
 function modal(html){$("#modalbody").innerHTML=html;const m=$("#modal"),box=m?.querySelector(".modalbox");if(box){box.style.maxHeight="calc(100dvh - 36px)";box.style.overflowY="auto";box.style.overscrollBehavior="contain";box.style.webkitOverflowScrolling="touch"}m?.classList.remove("hide")} function closeModal(){$("#modal").classList.add("hide")}
-function manual(){modal(`<h2>Add booking</h2><div class="form"><select id="ms">${S.services.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`)}</select><input id="mn" placeholder="Customer name"><input id="mp" placeholder="Mobile"><input id="md" type="date" value="${$("#diaryDate").value}"><input id="mt" type="time" value="09:00"><textarea id="mnotes" placeholder="Notes"></textarea><button class="primary" onclick="manualSave()">Save</button></div>`)}
+function manual(){
+  modal(`
+    <h2>Add booking</h2>
+    <div class="form">
+      <div>
+        <strong>Services</strong>
+        <div style="margin-top:10px;max-height:300px;overflow-y:auto">
+          ${S.services.map(x=>`
+            <label style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #eee">
+              <input type="checkbox" class="manual-service" value="${x.id}">
+              <span>
+                <strong>${esc(x.name)}</strong><br>
+                <small>${x.duration} mins · £${x.price}</small>
+              </span>
+            </label>
+          `).join("")}
+        </div>
+      </div>
+
+      <input id="mn" placeholder="Customer name">
+      <input id="mp" placeholder="Mobile">
+      <input id="md" type="date" value="${$("#diaryDate").value}">
+      <input id="mt" type="time" value="09:00">
+      <textarea id="mnotes" placeholder="Notes"></textarea>
+
+      <button class="primary" onclick="manualSave()">Save</button>
+    </div>
+  `)
+}
 async function manualSave(){
-  let x=S.services.find(s=>s.id===$("#ms").value),booking={id:uid(),name:$("#mn").value||"Customer",phone:$("#mp").value,notes:$("#mnotes").value,email:"",serviceId:x.id,serviceName:x.name,date:$("#md").value,time:$("#mt").value,duration:x.duration,price:x.price,basePrice:x.price,deposit:bookingDepositForTotal(x.price),depositPaid:false,pinCurls:false,status:"confirmed",bookingRef:bookingRef()};
+  const selectedIds=[...document.querySelectorAll(".manual-service:checked")].map(el=>el.value);
+  const services=selectedIds.map(id=>S.services.find(s=>s.id===id)).filter(Boolean);
+
+  if(!services.length)return toast("Choose at least one service");
+
+  const totalDuration=services.reduce((sum,s)=>sum+Number(s.duration||0),0);
+  const totalPrice=services.reduce((sum,s)=>sum+Number(s.price||0),0);
+  const primary=services[0];
+
+  let booking={
+    id:uid(),
+    name:$("#mn").value||"Customer",
+    phone:$("#mp").value,
+    notes:$("#mnotes").value,
+    email:"",
+    serviceId:primary.id,
+    serviceName:services.map(s=>s.name).join(" + "),
+    date:$("#md").value,
+    time:$("#mt").value,
+    duration:totalDuration,
+    price:totalPrice,
+    basePrice:totalPrice,
+    deposit:bookingDepositForTotal(totalPrice),
+    depositPaid:false,
+    pinCurls:false,
+    status:"confirmed",
+    bookingRef:bookingRef(),
+    services:services.map(s=>({
+      id:s.id,
+      name:s.name,
+      duration:Number(s.duration||0),
+      price:Number(s.price||0)
+    }))
+  };
+
   if(!booking.date||!booking.time)return toast("Choose a date and time");
 
-  const clashes=S.bookings.filter(b=>bookingBlocksTime(b)&&b.date===booking.date&&overlap(booking.time,booking.duration,b.time,Number(b.duration||60)));
-  const blocked=S.blocks.filter(b=>b.date===booking.date&&overlap(booking.time,booking.duration,b.start,mins(b.end)-mins(b.start)));
+  const clashes=S.bookings.filter(b=>
+    bookingBlocksTime(b)&&
+    b.date===booking.date&&
+    overlap(booking.time,booking.duration,b.time,Number(b.duration||60))
+  );
+
+  const blocked=S.blocks.filter(b=>
+    b.date===booking.date&&
+    overlap(booking.time,booking.duration,b.start,mins(b.end)-mins(b.start))
+  );
+
   const dow=new Date(booking.date+"T12:00").getDay(),h=S.hours[dow];
-  const outsideHours=!h?.open||mins(booking.time)<mins(h.start)||mins(booking.time)+booking.duration>mins(h.end);
+  const outsideHours=
+    !h?.open||
+    mins(booking.time)<mins(h.start)||
+    mins(booking.time)+booking.duration>mins(h.end);
 
   if(clashes.length||blocked.length||outsideHours){
     let warning="This admin booking needs an override:\n\n";
-    if(clashes.length)warning+=`\u2022 Overlaps ${clashes.length} existing appointment${clashes.length===1?"":"s"}.\n`;
-    if(blocked.length)warning+=`\u2022 Overlaps blocked time.\n`;
-    if(outsideHours)warning+=`\u2022 Falls outside normal working hours.\n`;
+
+    if(clashes.length)
+      warning+=`\u2022 Overlaps ${clashes.length} existing appointment${clashes.length===1?"":"s"}.\n`;
+
+    if(blocked.length)
+      warning+=`\u2022 Overlaps blocked time.\n`;
+
+    if(outsideHours)
+      warning+=`\u2022 Falls outside normal working hours.\n`;
+
     warning+="\nBook it anyway?";
+
     if(!confirm(warning))return;
   }
 
-  try{if(window.CloudDB?.enabled()){let r=await CloudDB.createAdminBooking(booking);if(r?.booking)booking=r.booking}}catch(e){console.error(e);return toast("Could not save booking online")}
-  S.bookings.push(booking);save();closeModal();await syncAdminBookings();adminRender();toast("Booking saved");
+  try{
+    if(window.CloudDB?.enabled()){
+      let r=await CloudDB.createAdminBooking(booking);
+      if(r?.booking)booking=r.booking;
+    }
+  }catch(e){
+    console.error(e);
+    return toast("Could not save booking online");
+  }
+
+  S.bookings.push(booking);
+  save();
+  closeModal();
+  await syncAdminBookings();
+  adminRender();
+  toast("Booking saved");
 }
 function renderCustomers(){
   let m={};
