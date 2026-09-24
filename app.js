@@ -754,13 +754,13 @@ function manual(){
         <strong>Services</strong>
         <div style="margin-top:10px;max-height:300px;overflow-y:auto">
           ${S.services.map(x=>`
-         <label style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #eee;background:#fff;color:#1f1a17 !important;-webkit-text-fill-color:#1f1a17">
-              <input type="checkbox" class="manual-service" value="${x.id}">
-              <span>
-               <strong style="color:#1f1a17 !important;-webkit-text-fill-color:#1f1a17 !important;display:inline-block;">TEST — ${esc(x.name)}</strong><br>
-<small style="color:#6f625b !important;">${x.duration} mins · £${x.price}</small>
-              </span>
-            </label>
+         <div style="display:flex;align-items:center;gap:12px;padding:14px 8px;border-bottom:1px solid #eee;background:#fff">
+  <input type="checkbox" class="manual-service" value="${x.id}" style="width:20px;height:20px;flex:none">
+  <div style="display:block;color:#1f1a17">
+    <div style="display:block;color:#1f1a17;font-weight:700">${esc(x.name)}</div>
+    <div style="display:block;color:#6f625b;margin-top:3px">${x.duration} mins · £${x.price}</div>
+  </div>
+</div>
           `).join("")}
         </div>
       </div>
