@@ -234,15 +234,61 @@ function timeStep(){
 }
 function pickTime(t){if(within24Hours(W.date,t)){lastMinuteContactMessage(W.date,t);return}W.time=t;W.step=6;bookRender()}
 function details(){
- let x=W.service,total=x.price+(W.pinCurls?2:0),dep=depositFor(x),remaining=Math.max(0,total-dep);
+ const services=selectedServices();
+ const base=selectedBasePrice();
+ const total=base+(W.pinCurls?2:0);
+ const dep=selectedDeposit();
+ const remaining=Math.max(0,total-dep);
+ const serviceRows=services.map(s=>`<div style="display:flex;justify-content:space-between;gap:12px;margin-top:6px"><span>${esc(s.name)} <small>· ${durationText(s.duration)}</small></span><b>${s.price===0?"Free":"£"+s.price}</b></div>`).join("");
  $("#bookbody").innerHTML=`<div class="bookcard"><h2>Your details</h2>
- <div class="form"><input id="bn" placeholder="Full name"><input id="bp" placeholder="Mobile number"><input id="be" type="email" placeholder="Email address" autocomplete="email"><textarea id="bnotes" placeholder="Notes \u2014 you can mention a gallery style you like"></textarea></div>
- <div class="summary"><b>${esc(x.name)}</b><br>${nice(W.date)} at ${W.time}<br><small class="booking-location">Cobella &amp; Co \u00B7 215 London Road, Hazel Grove, Stockport \u00B7 SK7 4HS</small><br>${x.price===0?"Free":"\u00A3"+x.price}${W.pinCurls?"<br><b>Pin Curls +\u00A32</b>":""}</div>
- ${dep?`<div class="deposit-notice"><span class="deposit-badge">DEPOSIT REQUIRED</span><h3>\u00A3${dep} deposit</h3><p>A \u00A3${dep} deposit is required to secure this appointment. Payment details will be sent to you after your booking request.</p><small>Remaining balance after deposit: \u00A3${remaining}</small></div>`:`<div class="deposit-notice free-booking"><h3>No deposit required</h3><p>This is a free appointment/service.</p></div>`}
- <div class="booking-total"><span>Service total</span><b>${total===0?"Free":"\u00A3"+total}</b></div>
+ <div class="form"><input id="bn" placeholder="Full name"><input id="bp" placeholder="Mobile number"><input id="be" type="email" placeholder="Email address" autocomplete="email"><textarea id="bnotes" placeholder="Notes — you can mention a gallery style you like"></textarea></div>
+ <div class="summary"><b>Selected services</b>${serviceRows}${W.pinCurls?`<div style="display:flex;justify-content:space-between;gap:12px;margin-top:6px"><span>Pin Curls</span><b>£2</b></div>`:""}<div style="margin-top:12px"><b>${nice(W.date)} at ${W.time}</b><br><small>Total appointment time: ${durationText(selectedDuration())}</small><br><small class="booking-location">Cobella &amp; Co · 215 London Road, Hazel Grove, Stockport · SK7 4HS</small></div></div>
+ ${dep?`<div class="deposit-notice"><span class="deposit-badge">DEPOSIT REQUIRED</span><h3>£${dep} deposit</h3><p>A £${dep} deposit is required to secure this appointment. Payment details will be sent to you after your booking request.</p><small>Remaining balance after deposit: £${remaining}</small></div>`:`<div class="deposit-notice free-booking"><h3>No deposit required</h3><p>This is a free appointment/service.</p></div>`}
+ <div class="booking-total"><span>Service total</span><b>${total===0?"Free":"£"+total}</b></div>
  <button class="primary full" onclick="confirmBook()">Request booking</button></div>`;
 }
-async function confirmBook(){if(within24Hours(W.date,W.time)){lastMinuteContactMessage(W.date,W.time);return}let n=$("#bn").value.trim(),p=$("#bp").value.trim(),e=$("#be").value.trim();if(!n||!p||!e)return toast("Add your name, mobile and email");if(!/^\S+@\S+\.\S+$/.test(e))return toast("Add a valid email address");let x=W.service,booking={id:uid(),name:n,phone:p,email:e,notes:$("#bnotes").value,serviceId:x.id,serviceName:x.name,date:W.date,time:W.time,duration:x.duration,price:x.price+(W.pinCurls?2:0),basePrice:x.price,deposit:depositFor(x),depositPaid:false,pinCurls:!!W.pinCurls,status:"confirmed",bookingRef:bookingRef()};let btn=$("#bookbody .primary.full");if(btn){btn.disabled=true;btn.textContent="Saving booking\u2026"}try{if(window.CloudDB?.enabled()){let r=await CloudDB.createBooking(booking);if(r?.booking)booking=r.booking}}catch(err){console.error(err);if(btn){btn.disabled=false;btn.textContent="Request booking"}return toast((err?.message||"").includes("appointment time")?"That time has just been taken. Please choose another time.":"Could not save booking online. Please try again.")}S.bookings.push(booking);save();$("#bookbody").innerHTML=`<div class="bookcard" style="text-align:center"><h2>\u2713 You're booked</h2><p>${nice(W.date)} at ${W.time}${W.pinCurls?"<br>Pin Curls +\u00A32":""}</p>${depositFor(x)?`<div class="deposit-confirm"><b>\u00A3${depositFor(x)} deposit required</b><br><span>Your payment details will be sent to you separately to secure the appointment.</span></div>`:""}<div class="deposit-notice"><b>Manage your booking online</b><br><span>Use the email address and mobile number you booked with. You can reschedule up to 48 hours before your appointment.</span></div><p class="confirm-address">Cobella &amp; Co<br>215 London Road, Hazel Grove, Stockport, SK7 4HS</p><button class="primary" onclick="home()">Done</button></div>`;if(authed)adminRender()}
+async function confirmBook(){
+ if(within24Hours(W.date,W.time)){lastMinuteContactMessage(W.date,W.time);return}
+ let n=$("#bn").value.trim(),p=$("#bp").value.trim(),e=$("#be").value.trim();
+ if(!n||!p||!e)return toast("Add your name, mobile and email");
+ if(!/^\S+@\S+\.\S+$/.test(e))return toast("Add a valid email address");
+ const services=selectedServices();
+ const primary=services[0];
+ const base=selectedBasePrice();
+ const total=base+(W.pinCurls?2:0);
+ const dep=selectedDeposit();
+ let booking={
+   id:uid(),name:n,phone:p,email:e,notes:$("#bnotes").value,
+   serviceId:primary.id,
+   serviceName:services.map(s=>s.name).join(" + "),
+   date:W.date,time:W.time,
+   duration:selectedDuration(),
+   price:total,
+   basePrice:base,
+   deposit:dep,
+   depositPaid:false,
+   pinCurls:!!W.pinCurls,
+   services:selectedServiceSnapshots(),
+   status:"confirmed",
+   bookingRef:bookingRef()
+ };
+ let btn=$("#bookbody .primary.full");
+ if(btn){btn.disabled=true;btn.textContent="Saving booking…"}
+ try{
+   if(window.CloudDB?.enabled()){
+     let r=await CloudDB.createBooking(booking);
+     if(r?.booking)booking=r.booking;
+   }
+ }catch(err){
+   console.error(err);
+   if(btn){btn.disabled=false;btn.textContent="Request booking"}
+   return toast((err?.message||"").includes("appointment time")?"That time has just been taken. Please choose another time.":"Could not save booking online. Please try again.");
+ }
+ S.bookings.push(booking);save();
+ const serviceList=services.map(s=>esc(s.name)).join("<br>");
+ $("#bookbody").innerHTML=`<div class="bookcard" style="text-align:center"><h2>✓ You're booked</h2><p>${serviceList}${W.pinCurls?"<br>Pin Curls +£2":""}<br><br>${nice(W.date)} at ${W.time}</p><p><b>Total: ${total===0?"Free":"£"+total}</b><br><small>${durationText(selectedDuration())}</small></p>${dep?`<div class="deposit-confirm"><b>£${dep} deposit required</b><br><span>Your payment details will be sent to you separately to secure the appointment.</span></div>`:""}<div class="deposit-notice"><b>Manage your booking online</b><br><span>Use the email address and mobile number you booked with. You can reschedule up to 48 hours before your appointment.</span></div><p class="confirm-address">Cobella &amp; Co<br>215 London Road, Hazel Grove, Stockport, SK7 4HS</p><button class="primary" onclick="home()">Done</button></div>`;
+ if(authed)adminRender();
+}
 let MY={bookings:[],booking:null,email:"",phone:"",busy:[],date:""};
 function customerCutoffOk(b){
   const at=new Date(`${b.date}T${b.time}:00`);
