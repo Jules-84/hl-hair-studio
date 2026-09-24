@@ -841,8 +841,62 @@ async function manualSave(){
   }
   S.bookings.push(booking);save();closeModal();await syncAdminBookings();adminRender();toast("Booking saved");
 }
-function renderCustomers(){let m={};S.bookings.filter(b=>!b.customerHidden).forEach(b=>{let k=b.phone||b.email||b.name;m[k]=m[k]||{name:b.name,phone:b.phone,email:b.email||"",count:0};m[k].count++});$("#customerList").innerHTML=Object.values(m).map(c=>`<div class="adminrow customer-row" onclick="openCustomer('${encodeURIComponent(c.phone)}')"><div><b>${esc(c.name)}</b><br>${esc(c.phone)}</div><small>${c.count} booking(s) \u00B7 View \u2192</small></div>`).join("")||"No customers yet."}
-function openCustomer(encodedPhone){const phone=decodeURIComponent(encodedPhone),rows=S.bookings.filter(b=>b.phone===phone).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));if(!rows.length)return;const c=rows[0],up=rows.filter(b=>b.status!=="cancelled"&&b.date>=today()),past=rows.filter(b=>b.date<today()||["cancelled","no_show","completed"].includes(b.status));const card=b=>`<div class="customer-booking-detail"><div>${b.customerUpdate?`<span style="display:inline-block;background:#fae2c9;border:1px solid #e8bd91;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:700;margin-bottom:5px">● New customer update${b.customerUpdateType==="rescheduled"?" · Rescheduled":b.customerUpdateType==="notes"?" · Notes changed":""}</span><br>`:""}<b>${esc(b.serviceName)}</b><br><span>${nice(b.date)} at ${b.time}</span><br><small>${b.status==="cancelled"?"Cancelled":b.status==="completed"?"Completed":b.status==="no_show"?"No-show":"Booked"}${b.bookingRef?` · Ref ${esc(b.bookingRef)}`:""}</small>${b.notes?`<div style="margin-top:7px;font-size:13px"><b>Notes:</b> ${esc(b.notes)}</div>`:""}</div><div style="text-align:right"><b>${b.price===0?"Free":"£"+b.price}</b>${b.deposit?`<br><small>Deposit ${b.depositPaid?"paid":"due"}</small>`:""}<br><button type="button" class="text-back" style="margin-top:8px" onclick="event.stopPropagation();openAdminBookingEditor('${b.id}')">Edit</button></div></div>`;modal(`<div class="customer-profile"><span class="admin-kicker">CUSTOMER</span><h2>${esc(c.name)}</h2><div class="customer-contact"><b>Mobile</b><span>${esc(c.phone||"\u2014")}</span><b>Email</b><span>${esc(c.email||"\u2014")}</span></div><h3>Upcoming appointments</h3>${up.length?up.map(card).join(""):"<p>No upcoming appointments.</p>"}<h3>Booking history</h3>${past.length?past.map(card).join(""):"<p>No previous appointments.</p>"}<div style="margin-top:24px"><button class="danger-btn" onclick="deleteCustomer('${encodeURIComponent(phone)}')">Delete customer</button><p class="muted" style="margin-top:8px">Removes this person from your Customers list. Their appointment history is kept.</p></div></div>`) }
+function renderCustomers(){
+  let m={};
+  S.bookings.filter(b=>!b.customerHidden).forEach(b=>{
+    let k=b.phone||b.email||b.name;
+    m[k]=m[k]||{name:b.name,phone:b.phone,email:b.email||"",count:0,customerUpdate:false,updateTypes:[]};
+    m[k].count++;
+    if(b.customerUpdate){
+      m[k].customerUpdate=true;
+      if(b.customerUpdateType&&!m[k].updateTypes.includes(b.customerUpdateType))m[k].updateTypes.push(b.customerUpdateType);
+    }
+  });
+  $("#customerList").innerHTML=Object.values(m).map(c=>{
+    const updateText=c.updateTypes.includes("rescheduled")?"Appointment rescheduled":c.updateTypes.includes("notes")?"Notes changed":"Customer update";
+    return `<div class="adminrow customer-row" onclick="openCustomer('${encodeURIComponent(c.phone)}')"><div><b>${esc(c.name)}</b><br>${esc(c.phone)}${c.customerUpdate?`<div style="margin-top:7px"><span style="display:inline-block;background:#fae2c9;border:1px solid #e8bd91;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:700">● CUSTOMER UPDATE · ${updateText}</span></div>`:""}</div><small>${c.count} booking(s) · View →</small></div>`;
+  }).join("")||"No customers yet.";
+}
+function openCustomer(encodedPhone){
+  const phone=decodeURIComponent(encodedPhone),rows=S.bookings.filter(b=>b.phone===phone).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));if(!rows.length)return;
+  const c=rows[0],up=rows.filter(b=>b.status!=="cancelled"&&b.date>=today()),past=rows.filter(b=>b.date<today()||["cancelled","no_show","completed"].includes(b.status));
+  const card=b=>`<div class="customer-booking-detail"><div>${b.customerUpdate?`<span style="display:inline-block;background:#fae2c9;border:1px solid #e8bd91;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:700;margin-bottom:5px">● New customer update${b.customerUpdateType==="rescheduled"?" · Rescheduled":b.customerUpdateType==="notes"?" · Notes changed":""}</span><br>`:""}<b>${esc(b.serviceName)}</b><br><span>${nice(b.date)} at ${b.time}</span><br><small>${b.status==="cancelled"?"Cancelled":b.status==="completed"?"Completed":b.status==="no_show"?"No-show":"Booked"}${b.bookingRef?` · Ref ${esc(b.bookingRef)}`:""}</small>${b.notes?`<div style="margin-top:7px;font-size:13px"><b>Notes:</b> ${esc(b.notes)}</div>`:""}</div><div style="text-align:right"><b>${b.price===0?"Free":"£"+b.price}</b>${b.deposit?`<br><small>Deposit ${b.depositPaid?"paid":"due"}</small>`:""}<br><button type="button" class="text-back" style="margin-top:8px" onclick="event.stopPropagation();openAdminBookingEditor('${b.id}')">Edit</button>${b.customerUpdate?`<br><button type="button" class="text-back" style="margin-top:12px;white-space:nowrap" onclick="event.stopPropagation();acknowledgeCustomerUpdateFromCustomer('${b.id}','${encodeURIComponent(phone)}')">Mark update as seen</button>`:""}</div></div>`;
+  modal(`<div class="customer-profile"><span class="admin-kicker">CUSTOMER</span><h2>${esc(c.name)}</h2><button type="button" class="text-back" style="margin:0 0 14px" onclick="editCustomerDetails('${encodeURIComponent(phone)}')">Edit customer details</button><div class="customer-contact"><b>Mobile</b><span>${esc(c.phone||"—")}</span><b>Email</b><span>${esc(c.email||"—")}</span></div><h3>Upcoming appointments</h3>${up.length?up.map(card).join(""):"<p>No upcoming appointments.</p>"}<h3>Booking history</h3>${past.length?past.map(card).join(""):"<p>No previous appointments.</p>"}<div style="margin-top:24px"><button class="danger-btn" onclick="deleteCustomer('${encodeURIComponent(phone)}')">Delete customer</button><p class="muted" style="margin-top:8px">Removes this person from your Customers list. Their appointment history is kept.</p></div></div>`);
+}
+async function acknowledgeCustomerUpdateFromCustomer(id,encodedPhone){
+  const b=S.bookings.find(x=>x.id===id);if(!b)return;
+  try{
+    if(!window.CloudDB?.enabled()||typeof CloudDB.adminAcknowledgeCustomerUpdate!=="function")throw new Error("Customer update acknowledgement is unavailable");
+    const updated=await CloudDB.adminAcknowledgeCustomerUpdate(id);
+    if(updated)Object.assign(b,updated);else{b.customerUpdate=false;b.customerUpdateType=""}
+    save();adminRender();openCustomer(encodedPhone);toast("Customer update marked as seen");
+  }catch(e){console.error(e);toast("Could not clear customer update")}
+}
+function editCustomerDetails(encodedPhone){
+  const phone=decodeURIComponent(encodedPhone),rows=S.bookings.filter(b=>b.phone===phone);if(!rows.length)return;
+  const c=rows[0];
+  modal(`<h2>Edit customer details</h2><div class="form"><label>Name<input id="editCustomerName" value="${esc(c.name||"")}"></label><label>Mobile<input id="editCustomerPhone" value="${esc(c.phone||"")}"></label><label>Email<input id="editCustomerEmail" type="email" value="${esc(c.email||"")}"></label><button class="primary" onclick="saveCustomerDetails('${encodeURIComponent(phone)}')">Save customer details</button><button type="button" onclick="openCustomer('${encodeURIComponent(phone)}')">Cancel</button></div>`);
+}
+async function saveCustomerDetails(encodedPhone){
+  const oldPhone=decodeURIComponent(encodedPhone),rows=S.bookings.filter(b=>b.phone===oldPhone);if(!rows.length)return;
+  const name=String($("#editCustomerName")?.value||"").trim(),phone=String($("#editCustomerPhone")?.value||"").trim(),email=String($("#editCustomerEmail")?.value||"").trim();
+  if(!name)return toast("Add a customer name");
+  if(!phone)return toast("Add a mobile number");
+  const previous=rows.map(b=>({b,name:b.name,phone:b.phone,email:b.email}));
+  try{
+    if(window.CloudDB?.enabled()){
+      if(typeof CloudDB.updateAdminBooking!=="function")throw new Error("Customer detail update is unavailable");
+      for(const b of rows){
+        const next={...b,name,phone,email};
+        const r=await CloudDB.updateAdminBooking(b.id,next);
+        if(r?.booking)Object.assign(b,r.booking);else Object.assign(b,{name,phone,email});
+      }
+    }else rows.forEach(b=>Object.assign(b,{name,phone,email}));
+    save();await syncAdminBookings();adminRender();openCustomer(encodeURIComponent(phone));toast("Customer details updated");
+  }catch(e){
+    console.error(e);previous.forEach(x=>Object.assign(x.b,{name:x.name,phone:x.phone,email:x.email}));save();adminRender();toast("Could not update customer details");
+  }
+}
 async function deleteCustomer(encodedPhone){const phone=decodeURIComponent(encodedPhone),rows=S.bookings.filter(b=>b.phone===phone);if(!rows.length)return;const name=rows[0].name||"this customer";if(!confirm(`Delete ${name} from your Customers list?\n\nTheir appointment and booking history will be kept.`))return;try{if(window.CloudDB?.enabled()&&typeof CloudDB.hideCustomer==="function")await CloudDB.hideCustomer(phone);S.bookings.forEach(b=>{if(b.phone===phone)b.customerHidden=true});save();closeModal();renderCustomers();toast("Customer deleted from list")}catch(err){console.error(err);toast("Could not delete customer")}}
 
 function renderGalleryAdmin(){
