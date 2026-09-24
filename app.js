@@ -596,7 +596,7 @@ function renderDiary(){
  const cards=laid.map(item=>{
    const x=item.booking,st=item.start,d=Number(x.duration||60),en=item.end;
    const eh=Math.floor(en/60),em=en%60,left=8+item.col*(colWidth+gap);
-   const depositClass=!Number(x.deposit)?"deposit-none":(x.depositPaid?"deposit-paid":"deposit-due");
+   const depositClass=x.customerUpdate?"customer-update":(x.status==="completed"?"status-completed":(["cancelled","no_show"].includes(x.status)?"status-closed":(!Number(x.deposit)?"deposit-none":(x.depositPaid?"deposit-paid":"deposit-due"))));
    const depositLabel=!Number(x.deposit)?"No deposit":(x.depositPaid?`\u2713 \u00A3${x.deposit} deposit paid`:`\u00A3${x.deposit} deposit due`);
    const statusLabel={confirmed:"Booked",arrived:"Arrived",completed:"Completed",no_show:"No-show",cancelled:"Cancelled"}[x.status||"confirmed"]||"Booked";
    return `<button class="diary-appt ${depositClass}" style="top:${Math.max(0,(st-start)*ppm)}px;height:${Math.max(38,d*ppm)}px;left:${left}px;width:${colWidth}px" onclick="openDiaryBooking('${x.id}')">
