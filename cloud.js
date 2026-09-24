@@ -318,6 +318,9 @@
   async function updateAdminBooking(id,b){
     if(!client)return {localOnly:true,booking:b};
     const payload={
+      name:b.name,
+phone:b.phone,
+email:b.email,
       service_id:b.serviceId,
       service_name:b.serviceName,
       appointment_date:b.date,
