@@ -206,6 +206,19 @@
     return (data||[]).map(mapBooking);
   }
 
+  async function customerUpdateNotes(bookingId,email,phone,notes){
+    if(!client)throw new Error("Online booking management is unavailable");
+    const {data,error}=await client.rpc("customer_update_booking_notes",{
+      p_booking_id:bookingId,
+      p_email:String(email||"").trim().toLowerCase(),
+      p_phone:String(phone||""),
+      p_notes:String(notes||"")
+    });
+    if(error)throw error;
+    const row=Array.isArray(data)?data[0]:data;
+    return row?mapBooking(row):null;
+  }
+
   async function customerRescheduleBusySlots(date,bookingId,email,phone){
     if(!client)return [];
     const {data,error}=await client.rpc("customer_reschedule_busy_slots",{p_date:date,p_booking_id:bookingId,p_email:String(email||"").trim().toLowerCase(),p_phone:String(phone||"")});
@@ -519,6 +532,7 @@
     createBooking,
     createAdminBooking:createBooking,
     customerGetBookings,
+    customerUpdateNotes,
     customerRescheduleBusySlots,
     customerRescheduleBooking,
     busySlots,
