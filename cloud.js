@@ -316,13 +316,13 @@
   }
 async function deleteCustomerBookings(phone){
   if(!client)return {localOnly:true};
+
   const value=String(phone||"").trim();
   if(!value)throw new Error("Customer mobile number is missing");
 
-  const {error}=await client
-    .from("bookings")
-    .delete()
-    .eq("phone",value);
+  const {error}=await client.rpc("admin_delete_customer_bookings",{
+    p_phone:value
+  });
 
   if(error)throw error;
   return true;
