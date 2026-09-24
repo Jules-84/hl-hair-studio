@@ -25,7 +25,8 @@
     pinCurls:!!r.pin_curls,
     status:r.status||"confirmed",
     bookingRef:r.booking_ref||"",
-    customerHidden:!!r.customer_hidden
+    customerHidden:!!r.customer_hidden,
+    services:Array.isArray(r.services)?r.services:[]
   });
 
   const mapBlock=r=>({
@@ -283,6 +284,31 @@
     return true;
   }
 
+  async function updateAdminBooking(id,b){
+    if(!client)return {localOnly:true,booking:b};
+    const payload={
+      service_id:b.serviceId,
+      service_name:b.serviceName,
+      appointment_date:b.date,
+      appointment_time:b.time,
+      duration:Number(b.duration||0),
+      price:Number(b.price||0),
+      base_price:Number(b.basePrice??b.price??0),
+      deposit:Number(b.deposit||0),
+      pin_curls:!!b.pinCurls,
+      notes:b.notes||"",
+      services:Array.isArray(b.services)?b.services:[]
+    };
+    const {data,error}=await client
+      .from("bookings")
+      .update(payload)
+      .eq("id",id)
+      .select("*")
+      .single();
+    if(error)throw error;
+    return {booking:mapBooking(data)};
+  }
+
   async function updateBookingStatus(id,status){
     if(!client)return {localOnly:true};
     const allowed=["confirmed","arrived","completed","no_show","cancelled"];
@@ -506,6 +532,7 @@
     fetchBookings,
     hideCustomer,
     updateDepositPaid,
+    updateAdminBooking,
     updateBookingStatus,
     cancelBooking,
     fetchAvailability,
