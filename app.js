@@ -659,7 +659,7 @@ function openAdminBookingEditor(id){
   const b=S.bookings.find(x=>x.id===id);if(!b)return;
   const selected=new Set(adminBookingServices(b).map(s=>s.id));
   const rows=S.services.map(s=>`<label style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.08)"><input type="checkbox" class="admin-edit-service" value="${s.id}" ${selected.has(s.id)?"checked":""}><span style="flex:1"><b>${esc(s.name)}</b><br><small>${durationText(s.duration)} · ${s.price===0?"Free":"£"+s.price}</small></span></label>`).join("");
-  modal(`<button class="text-back" onclick="openDiaryBooking('${b.id}')">← Back</button><h2>Edit appointment</h2><div class="form"><label>Date<input id="aed" type="date" value="${b.date}"></label><label>Time<input id="aet" type="time" value="${b.time}"></label><label>Notes<textarea id="aenotes">${esc(b.notes||"")}</textarea></label></div><h3 style="margin-top:18px">Services</h3><div style="max-height:330px;overflow:auto">${rows}</div><button class="primary full" style="margin-top:18px" onclick="saveAdminBookingEdit('${b.id}')">Save appointment</button>`);
+  modal(`<button class="text-back" onclick="openDiaryBooking('${b.id}')">← Back</button><h2>Edit appointment</h2><div class="form"><label>Customer name<input id="aename" type="text" value="${esc(b.name||"")}"></label><label>Mobile<input id="aephone" type="tel" value="${esc(b.phone||"")}"></label><label>Email<input id="aeemail" type="email" value="${esc(b.email||"")}"></label><label>Date<input id="aed" type="date" value="${b.date}"></label><label>Time<input id="aet" type="time" value="${b.time}"></label><label>Notes<textarea id="aenotes">${esc(b.notes||"")}</textarea></label></div><h3 style="margin-top:18px">Services</h3><div style="max-height:330px;overflow:auto">${rows}</div><button class="primary full" style="margin-top:18px" onclick="saveAdminBookingEdit('${b.id}')">Save appointment</button>`);
 }
 async function saveAdminBookingEdit(id){
   const b=S.bookings.find(x=>x.id===id);if(!b)return;
@@ -673,7 +673,7 @@ async function saveAdminBookingEdit(id){
     services=services.filter(s=>s.id!=="ext_remove");
   }
 
-  const date=$("#aed").value,time=$("#aet").value,notes=$("#aenotes").value;
+  const name=$("#aename").value.trim(),phone=$("#aephone").value.trim(),email=$("#aeemail").value.trim(),date=$("#aed").value,time=$("#aet").value,notes=$("#aenotes").value;
   if(!date||!time)return toast("Choose a date and time");
   if(!services.length)return toast("Choose at least one service");
 
@@ -698,7 +698,7 @@ async function saveAdminBookingEdit(id){
   }
 
   const previous=structuredClone(b);
-  const next={...b,serviceId:primary.id,serviceName:services.map(s=>s.name).join(" + "),date,time,duration,price,basePrice,deposit,notes,services:snapshots};
+  const next={...b,name,phone,email,serviceId:primary.id,serviceName:services.map(s=>s.name).join(" + "),date,time,duration,price,basePrice,deposit,notes,services:snapshots};
   Object.assign(b,next);save();renderDiary();
 
   try{
