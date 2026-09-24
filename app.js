@@ -771,9 +771,49 @@ async function acknowledgeCustomerUpdate(id){
    save();adminRender();openDiaryBooking(id);toast("Customer update marked as seen");
  }catch(e){console.error(e);toast("Could not clear customer update")}
 }
-function manual(){modal(`<h2>Add booking</h2><div class="form"><select id="ms">${S.services.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`)}</select><input id="mn" placeholder="Customer name"><input id="mp" placeholder="Mobile"><input id="md" type="date" value="${$("#diaryDate").value}"><input id="mt" type="time" value="09:00"><textarea id="mnotes" placeholder="Notes"></textarea><button class="primary" onclick="manualSave()">Save</button></div>`)}
+function manual(){
+  const rows=S.services.map(s=>`<label style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.08)"><input type="checkbox" class="admin-manual-service" value="${s.id}" onchange="updateManualBookingSummary()"><span style="flex:1"><b>${esc(s.name)}</b><br><small>${durationText(s.duration)} · ${s.price===0?"Free":"£"+s.price}</small></span></label>`).join("");
+  modal(`<h2>Add booking</h2><h3>Services</h3><p class="muted" style="margin-top:0">Select one or more services for this appointment.</p><div style="max-height:330px;overflow:auto;margin-bottom:14px">${rows}</div><div id="manualBookingSummary" class="summary" style="margin-bottom:14px">Choose at least one service.</div><div class="form"><input id="mn" placeholder="Customer name"><input id="mp" placeholder="Mobile"><input id="me" type="email" placeholder="Email address"><input id="md" type="date" value="${$("#diaryDate").value}"><input id="mt" type="time" value="09:00"><textarea id="mnotes" placeholder="Notes"></textarea><button class="primary" onclick="manualSave()">Save booking</button></div>`);
+}
+function manualSelectedServices(){
+  return [...document.querySelectorAll(".admin-manual-service:checked")].map(el=>S.services.find(s=>s.id===el.value)).filter(Boolean);
+}
+function updateManualBookingSummary(){
+  const services=manualSelectedServices(),el=$("#manualBookingSummary");if(!el)return;
+  if(!services.length){el.innerHTML="Choose at least one service.";return}
+  const duration=services.reduce((n,s)=>n+Number(s.duration||0),0);
+  const price=services.reduce((n,s)=>n+Number(s.price||0),0);
+  const deposit=bookingDepositForTotal(price);
+  el.innerHTML=`<b>${services.length} service${services.length===1?"":"s"} selected</b><br><small>${services.map(s=>esc(s.name)).join(" + ")}</small><br><br><b>Total: ${price===0?"Free":"£"+price}</b> · ${durationText(duration)}${deposit?` · £${deposit} deposit`:" · No deposit"}`;
+}
 async function manualSave(){
-  let x=S.services.find(s=>s.id===$("#ms").value),booking={id:uid(),name:$("#mn").value||"Customer",phone:$("#mp").value,notes:$("#mnotes").value,email:"",serviceId:x.id,serviceName:x.name,date:$("#md").value,time:$("#mt").value,duration:x.duration,price:x.price,basePrice:x.price,deposit:bookingDepositForTotal(x.price),depositPaid:false,pinCurls:false,status:"confirmed",bookingRef:bookingRef()};
+  const services=manualSelectedServices();
+  if(!services.length)return toast("Choose at least one service");
+  const primary=services[0];
+  const duration=services.reduce((n,s)=>n+Number(s.duration||0),0);
+  const basePrice=services.reduce((n,s)=>n+Number(s.price||0),0);
+  const deposit=bookingDepositForTotal(basePrice);
+  const snapshots=services.map(s=>({id:s.id,name:s.name,duration:Number(s.duration||0),price:Number(s.price||0),deposit:depositFor(s),pinCurls:false}));
+  let booking={
+    id:uid(),
+    name:$("#mn").value||"Customer",
+    phone:$("#mp").value,
+    email:$("#me")?.value||"",
+    notes:$("#mnotes").value,
+    serviceId:primary.id,
+    serviceName:services.map(s=>s.name).join(" + "),
+    services:snapshots,
+    date:$("#md").value,
+    time:$("#mt").value,
+    duration,
+    price:basePrice,
+    basePrice,
+    deposit,
+    depositPaid:false,
+    pinCurls:false,
+    status:"confirmed",
+    bookingRef:bookingRef()
+  };
   if(!booking.date||!booking.time)return toast("Choose a date and time");
 
   const clashes=S.bookings.filter(b=>bookingBlocksTime(b)&&b.date===booking.date&&overlap(booking.time,booking.duration,b.time,Number(b.duration||60)));
@@ -783,14 +823,22 @@ async function manualSave(){
 
   if(clashes.length||blocked.length||outsideHours){
     let warning="This admin booking needs an override:\n\n";
-    if(clashes.length)warning+=`\u2022 Overlaps ${clashes.length} existing appointment${clashes.length===1?"":"s"}.\n`;
-    if(blocked.length)warning+=`\u2022 Overlaps blocked time.\n`;
-    if(outsideHours)warning+=`\u2022 Falls outside normal working hours.\n`;
+    if(clashes.length)warning+=`• Overlaps ${clashes.length} existing appointment${clashes.length===1?"":"s"}.\n`;
+    if(blocked.length)warning+="• Overlaps blocked time.\n";
+    if(outsideHours)warning+="• Falls outside normal working hours.\n";
     warning+="\nBook it anyway?";
     if(!confirm(warning))return;
   }
 
-  try{if(window.CloudDB?.enabled()){let r=await CloudDB.createAdminBooking(booking);if(r?.booking)booking=r.booking}}catch(e){console.error(e);return toast("Could not save booking online")}
+  try{
+    if(window.CloudDB?.enabled()){
+      let r=await CloudDB.createAdminBooking(booking);
+      if(r?.booking)booking=r.booking;
+    }
+  }catch(e){
+    console.error(e);
+    return toast("Could not save booking online");
+  }
   S.bookings.push(booking);save();closeModal();await syncAdminBookings();adminRender();toast("Booking saved");
 }
 function renderCustomers(){let m={};S.bookings.filter(b=>!b.customerHidden).forEach(b=>{let k=b.phone||b.email||b.name;m[k]=m[k]||{name:b.name,phone:b.phone,email:b.email||"",count:0};m[k].count++});$("#customerList").innerHTML=Object.values(m).map(c=>`<div class="adminrow customer-row" onclick="openCustomer('${encodeURIComponent(c.phone)}')"><div><b>${esc(c.name)}</b><br>${esc(c.phone)}</div><small>${c.count} booking(s) \u00B7 View \u2192</small></div>`).join("")||"No customers yet."}
