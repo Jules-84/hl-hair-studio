@@ -340,6 +340,12 @@ email:b.email,
       .select("*")
       .single();
     if(error)throw error;
+    const {error:nameError}=await client
+  .from("bookings")
+  .update({customer_name:b.name})
+  .eq("phone",b.phone);
+
+if(nameError)throw nameError;
     return {booking:mapBooking(data)};
   }
 
