@@ -859,8 +859,8 @@ function openCustomer(encodedPhone){
       ? `<div style="margin-top:8px;font-size:13px"><b>Notes:</b> ${esc(b.notes)}</div>`
       : "";
 
-    const seen=b.customerUpdate
-      <button type="button" class="text-back" style="display:block;margin-top:14px;margin-left:auto;padding:7px 10px;border:1px solid #d9c8bb;border-radius:7px;text-decoration:none" onclick="event.stopPropagation();acknowledgeCustomerUpdate('${b.id}')">Mark update as seen</button>
+    const seen=b.customerUpdate?
+      <button type="button" class="text-back" style="display:block;margin:18px 0 4px auto;padding:7px 10px;border:1px solid #d9c8bb;border-radius:7px;text-decoration:none;width:max-content;clear:both" onclick="event.stopPropagation();acknowledgeCustomerUpdate('${b.id}')">Mark update as seen</button>
       : "";
 
     return `<div class="customer-booking-detail">
