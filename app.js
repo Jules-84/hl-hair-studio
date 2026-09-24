@@ -891,7 +891,35 @@ async function saveCustomerDetails(encodedPhone){
     console.error(e);previous.forEach(x=>Object.assign(x.b,{name:x.name,phone:x.phone,email:x.email}));save();adminRender();toast("Could not update customer details");
   }
 }
-async function deleteCustomer(encodedPhone){const phone=decodeURIComponent(encodedPhone),rows=S.bookings.filter(b=>b.phone===phone);if(!rows.length)return;const name=rows[0].name||"this customer";if(!confirm(`Delete ${name} from your Customers list?\n\nTheir appointment and booking history will be kept.`))return;try{if(window.CloudDB?.enabled()&&typeof CloudDB.hideCustomer==="function")await CloudDB.hideCustomer(phone);S.bookings.forEach(b=>{if(b.phone===phone)b.customerHidden=true});save();closeModal();renderCustomers();toast("Customer deleted from list")}catch(err){console.error(err);toast("Could not delete customer")}}
+async function deleteCustomer(encodedPhone){
+  const phone=decodeURIComponent(encodedPhone);
+  const rows=S.bookings.filter(b=>b.phone===phone);
+
+  if(!rows.length)return;
+
+  const name=rows[0].name||"this customer";
+
+  if(!confirm(
+    `Delete ${name}?\n\nThis will permanently delete this customer AND all of their appointments from the diary. This cannot be undone.`
+  ))return;
+
+  try{
+    if(window.CloudDB?.enabled()&&typeof CloudDB.deleteCustomerBookings==="function"){
+      await CloudDB.deleteCustomerBookings(phone);
+    }
+
+    S.bookings=S.bookings.filter(b=>b.phone!==phone);
+
+    save();
+    closeModal();
+    adminRender();
+
+    toast("Customer and appointments deleted");
+  }catch(err){
+    console.error(err);
+    toast("Could not delete customer");
+  }
+}
 
 function renderGalleryAdmin(){
  const el=$("#galleryAdminList");if(!el)return;
