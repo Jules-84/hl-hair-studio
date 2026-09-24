@@ -169,7 +169,15 @@
       deposit_paid:!!b.depositPaid,
       pin_curls:!!b.pinCurls,
       status:b.status||"confirmed",
-      booking_ref:b.bookingRef||null
+      booking_ref:b.bookingRef||null,
+      services:Array.isArray(b.services) ? b.services : [{
+        id:b.serviceId,
+        name:b.serviceName,
+        duration:b.duration,
+        price:b.price,
+        deposit:b.deposit,
+        pinCurls:!!b.pinCurls
+      }]
     };
 
     const {error}=await client.from("bookings").insert(payload);
