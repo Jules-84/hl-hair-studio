@@ -617,7 +617,76 @@ function openDiaryBooking(id){
    : `<div class="deposit-no-payment">No deposit required</div>`;
  const status=b.status||"confirmed";
  const statusHtml=`<div class="appointment-status-control"><label>Appointment status<select onchange="setAppointmentStatus('${b.id}',this.value)"><option value="confirmed" ${status==="confirmed"?"selected":""}>Booked</option><option value="arrived" ${status==="arrived"?"selected":""}>Arrived</option><option value="completed" ${status==="completed"?"selected":""}>Completed</option><option value="no_show" ${status==="no_show"?"selected":""}>No-show</option><option value="cancelled" ${status==="cancelled"?"selected":""}>Cancelled</option></select></label></div>`;
- modal(`<h2>${esc(b.name)}</h2><div class="summary"><b>${esc(b.serviceName||b.service||"Appointment")}</b>${b.pinCurls?"<br>+ Pin Curls":""}<br>${nice(b.date)} at ${b.time}<br>${esc(b.phone||"")}${b.email?`<br>${esc(b.email)}`:""}${b.notes?`<br><br>Notes: ${esc(b.notes)}`:""}</div>${statusHtml}${depositHtml}`);
+ modal(`<h2>${esc(b.name)}</h2><div class="summary"><b>${esc(b.serviceName||b.service||"Appointment")}</b>${b.pinCurls?"<br>+ Pin Curls":""}<br>${nice(b.date)} at ${b.time}<br>${esc(b.phone||"")}${b.email?`<br>${esc(b.email)}`:""}${b.notes?`<br><br>Notes: ${esc(b.notes)}`:""}</div><button class="primary full" style="margin:14px 0" onclick="openAdminBookingEditor('${b.id}')">Edit appointment</button>${statusHtml}${depositHtml}`);
+}
+
+function adminBookingServices(b){
+  if(Array.isArray(b.services)&&b.services.length)return b.services.map(s=>({
+    id:s.id,
+    name:s.name,
+    duration:Number(s.duration||0),
+    price:Number(s.price||0),
+    deposit:Number(s.deposit||0),
+    pinCurls:!!s.pinCurls
+  }));
+  const found=S.services.find(s=>s.id===b.serviceId);
+  return found?[{id:found.id,name:found.name,duration:Number(b.duration||found.duration||0),price:Number(b.basePrice??b.price??found.price??0),deposit:Number(b.deposit||0),pinCurls:!!b.pinCurls}]:[];
+}
+function openAdminBookingEditor(id){
+  const b=S.bookings.find(x=>x.id===id);if(!b)return;
+  const selected=new Set(adminBookingServices(b).map(s=>s.id));
+  const rows=S.services.map(s=>`<label style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.08)"><input type="checkbox" class="admin-edit-service" value="${s.id}" ${selected.has(s.id)?"checked":""}><span style="flex:1"><b>${esc(s.name)}</b><br><small>${durationText(s.duration)} · ${s.price===0?"Free":"£"+s.price}</small></span></label>`).join("");
+  modal(`<button class="text-back" onclick="openDiaryBooking('${b.id}')">← Back</button><h2>Edit appointment</h2><div class="form"><label>Date<input id="aed" type="date" value="${b.date}"></label><label>Time<input id="aet" type="time" value="${b.time}"></label><label>Notes<textarea id="aenotes">${esc(b.notes||"")}</textarea></label></div><h3 style="margin-top:18px">Services</h3><div style="max-height:330px;overflow:auto">${rows}</div><button class="primary full" style="margin-top:18px" onclick="saveAdminBookingEdit('${b.id}')">Save appointment</button>`);
+}
+async function saveAdminBookingEdit(id){
+  const b=S.bookings.find(x=>x.id===id);if(!b)return;
+  const ids=[...document.querySelectorAll(".admin-edit-service:checked")].map(x=>x.value);
+  if(!ids.length)return toast("Choose at least one service");
+  let services=ids.map(id=>S.services.find(s=>s.id===id)).filter(Boolean);
+
+  // If no extension fitting remains, remove an Extension Removal that was part of the old automatic pair.
+  const hasFitting=services.some(isExtensionFitting);
+  if(!hasFitting&&services.some(s=>s.id==="ext_remove")&&adminBookingServices(b).some(s=>isExtensionFitting(s))){
+    services=services.filter(s=>s.id!=="ext_remove");
+  }
+
+  const date=$("#aed").value,time=$("#aet").value,notes=$("#aenotes").value;
+  if(!date||!time)return toast("Choose a date and time");
+  if(!services.length)return toast("Choose at least one service");
+
+  const duration=services.reduce((n,s)=>n+Number(s.duration||0),0);
+  const basePrice=services.reduce((n,s)=>n+Number(s.price||0),0);
+  const price=basePrice+(b.pinCurls?2:0);
+  const primary=services[0];
+  const snapshots=services.map(s=>({id:s.id,name:s.name,duration:Number(s.duration||0),price:Number(s.price||0),deposit:depositFor(s),pinCurls:s.id===primary.id?!!b.pinCurls:false}));
+
+  const clashes=S.bookings.filter(x=>x.id!==b.id&&bookingBlocksTime(x)&&x.date===date&&overlap(time,duration,x.time,Number(x.duration||60)));
+  const blocked=S.blocks.filter(x=>x.date===date&&overlap(time,duration,x.start,mins(x.end)-mins(x.start)));
+  const dow=new Date(date+"T12:00").getDay(),h=S.hours[dow];
+  const outsideHours=!h?.open||mins(time)<mins(h.start)||mins(time)+duration>mins(h.end);
+  if(clashes.length||blocked.length||outsideHours){
+    let warning="This admin change needs an override:\\n\\n";
+    if(clashes.length)warning+=`• Overlaps ${clashes.length} existing appointment${clashes.length===1?"":"s"}.\\n`;
+    if(blocked.length)warning+="• Overlaps blocked time.\\n";
+    if(outsideHours)warning+="• Falls outside normal working hours.\\n";
+    warning+="\\nSave it anyway?";
+    if(!confirm(warning))return;
+  }
+
+  const previous=structuredClone(b);
+  const next={...b,serviceId:primary.id,serviceName:services.map(s=>s.name).join(" + "),date,time,duration,price,basePrice,notes,services:snapshots};
+  Object.assign(b,next);save();renderDiary();
+
+  try{
+    if(window.CloudDB?.enabled()){
+      if(typeof CloudDB.updateAdminBooking!=="function")throw new Error("Admin booking update is unavailable");
+      const r=await CloudDB.updateAdminBooking(id,next);
+      if(r?.booking)Object.assign(b,r.booking);
+    }
+    save();closeModal();await syncAdminBookings();adminRender();toast("Appointment updated");
+  }catch(e){
+    console.error(e);Object.assign(b,previous);save();adminRender();openDiaryBooking(id);toast("Could not update appointment online");
+  }
 }
 
 async function setAppointmentStatus(id,status){
