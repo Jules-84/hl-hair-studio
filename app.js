@@ -155,7 +155,7 @@ function dateStep(){
     out.push(`<button class="choice" onclick="pickDate('${iso}')">${label}</button>`);
   }
   const lastMinuteNote=`<div class="deposit-notice" style="margin-top:16px"><b>Need an appointment within the next 24 hours?</b><br><span>Online bookings close 24 hours before each appointment time, but I may still have last-minute availability. Choose your date and look for <b> Tap to contact </b> on the available times, or contact me directly and I'll do my best to accommodate you.</span></div>`;
-  $("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a date</h2><p>${esc(W.service.name)}</p><button type="button" class="primary full" style="margin:0 0 16px" onclick="toast('Add another service is ready for the next step')">+ Add another service</button><div class="dates">${out.join("")}</div>${lastMinuteNote}</div>`;
+  $("#bookbody").innerHTML=`<div class="bookcard"><h2>Choose a date</h2><p>${esc(W.service.name)}</p><div class="dates">${out.join("")}</div>${lastMinuteNote}</div>`;
 }
 async function pickDate(d){
   W.date=d;W.cloudBusy=[];
