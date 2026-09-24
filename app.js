@@ -704,7 +704,7 @@ async function saveAdminBookingEdit(id){
   try{
     if(window.CloudDB?.enabled()){
       if(typeof CloudDB.updateAdminBooking!=="function")throw new Error("Admin booking update is unavailable");
-      const r=await CloudDB.updateAdminBooking(id,next);
+      const r=await CloudDB.updateAdminBooking(id,next,previous);
       if(r?.booking)Object.assign(b,r.booking);
     }
     save();closeModal();await syncAdminBookings();adminRender();toast("Appointment updated");
