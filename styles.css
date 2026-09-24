@@ -652,15 +652,17 @@ header{
 .diary-top-key{
   display:flex;
   align-items:center;
-  gap:9px;
-  flex-wrap:wrap;
-  font-size:11px;
-  font-weight:700;
-  line-height:1.2;
+  gap:6px;
+  flex-wrap:nowrap;
+  font-size:10px;
+  font-weight:600;
+  line-height:1;
 }
 
 .diary-top-key span{
   white-space:nowrap;
+  font-size:10px;
+  letter-spacing:-0.2px;
 }
 
 .diary-top-key .key-due{color:#d78f8f;}
@@ -668,7 +670,22 @@ header{
 .diary-top-key .key-update{color:#dca36b;}
 .diary-top-key .key-completed{color:#ad8fc2;}
 .diary-top-key .key-closed{color:#9d9591;}
+.diary-top-key span{
+  position:relative;
+  padding-left:9px;
+}
 
+.diary-top-key span::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:50%;
+  transform:translateY(-50%);
+  width:5px;
+  height:5px;
+  border-radius:50%;
+  background:currentColor;
+}
 .diary-date-row > label{
   flex:0 0 auto;
   margin-left:auto;
