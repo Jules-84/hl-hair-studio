@@ -26,7 +26,9 @@
     status:r.status||"confirmed",
     bookingRef:r.booking_ref||"",
     customerHidden:!!r.customer_hidden,
-    services:Array.isArray(r.services)?r.services:[]
+    services:Array.isArray(r.services)?r.services:[],
+    customerUpdate:!!r.customer_update,
+    customerUpdateType:r.customer_update_type||""
   });
 
   const mapBlock=r=>({
@@ -237,7 +239,23 @@
     });
     if(error)throw error;
     const row=Array.isArray(data)?data[0]:data;
-    return row?mapBooking(row):null;
+    if(row){
+      const mark=await client.rpc("customer_mark_booking_update",{
+        p_booking_id:bookingId,
+        p_email:String(email||"").trim().toLowerCase(),
+        p_phone:String(phone||""),
+        p_update_type:"rescheduled"
+      });
+      if(mark.error)console.error(mark.error);
+    }
+    return row?mapBooking({...row,customer_update:true,customer_update_type:"rescheduled"}):null;
+  }
+
+  async function adminAcknowledgeCustomerUpdate(id){
+    if(!client)return;
+    const {data,error}=await client.from("bookings").update({customer_update:false,customer_update_type:null}).eq("id",id).select("*").single();
+    if(error)throw error;
+    return mapBooking(data);
   }
 
   async function adminLogin(pin){
@@ -547,6 +565,7 @@
     hideCustomer,
     updateDepositPaid,
     updateAdminBooking,
+    adminAcknowledgeCustomerUpdate,
     updateBookingStatus,
     cancelBooking,
     fetchAvailability,
