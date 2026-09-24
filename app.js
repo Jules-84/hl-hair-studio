@@ -768,7 +768,52 @@ async function manualSave(){
   try{if(window.CloudDB?.enabled()){let r=await CloudDB.createAdminBooking(booking);if(r?.booking)booking=r.booking}}catch(e){console.error(e);return toast("Could not save booking online")}
   S.bookings.push(booking);save();closeModal();await syncAdminBookings();adminRender();toast("Booking saved");
 }
-function renderCustomers(){let m={};S.bookings.filter(b=>!b.customerHidden).forEach(b=>{let k=b.phone||b.email||b.name;m[k]=m[k]||{name:b.name,phone:b.phone,email:b.email||"",count:0};m[k].count++});$("#customerList").innerHTML=Object.values(m).map(c=>`<div class="adminrow customer-row" onclick="openCustomer('${encodeURIComponent(c.phone)}')"><div><b>${esc(c.name)}</b><br>${esc(c.phone)}</div><small>${c.count} booking(s) \u00B7 View \u2192</small></div>`).join("")||"No customers yet."}
+function renderCustomers(){
+  let m={};
+
+  S.bookings
+    .filter(b=>!b.customerHidden)
+    .forEach(b=>{
+      let k=b.phone||b.email||b.name;
+      if(!m[k])m[k]=[];
+      m[k].push(b);
+    });
+
+  const el=$("#customerList");
+  if(!el)return;
+
+  const rows=Object.values(m);
+
+  el.innerHTML=rows.length
+    ? rows.map(bookings=>{
+        const c=bookings[0];
+        const updates=bookings.filter(b=>b.customerUpdate);
+        const hasUpdate=updates.length>0;
+
+        const updateText=updates.some(b=>b.customerUpdateType==="rescheduled")
+          ?"Appointment rescheduled"
+          :"Notes changed";
+
+        return `<div class="customer-row" onclick="openCustomer('${encodeURIComponent(c.phone||"")}')">
+          <div>
+            <b>${esc(c.name)}</b>
+            <br>
+            <span>${esc(c.phone||c.email||"")}</span>
+            ${hasUpdate
+              ? `<div style="margin-top:5px;font-size:11px;font-weight:700;color:#dca36b;">
+                   ● CUSTOMER UPDATE · ${updateText}
+                 </div>`
+              :""
+            }
+          </div>
+
+          <div>
+            ${bookings.length} booking${bookings.length===1?"":"s"} · View →
+          </div>
+        </div>`;
+      }).join("")
+    : `<div class="empty-admin">No customers yet.</div>`;
+}
 function openCustomer(encodedPhone){
   const phone=decodeURIComponent(encodedPhone),
   rows=S.bookings.filter(b=>b.phone===phone).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));
