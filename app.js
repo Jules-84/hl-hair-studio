@@ -754,7 +754,7 @@ function manual(){
         <strong>Services</strong>
         <div style="margin-top:10px;max-height:300px;overflow-y:auto">
           ${S.services.map(x=>`
-           <label style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #eee;color:#1f1a17;background:#fff">
+         <label style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #eee;background:#fff;color:#1f1a17 !important;-webkit-text-fill-color:#1f1a17">
               <input type="checkbox" class="manual-service" value="${x.id}">
               <span>
                <strong style="color:#1f1a17 !important;">${esc(x.name)}</strong><br>
