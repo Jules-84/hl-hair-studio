@@ -787,7 +787,7 @@ function renderCustomers(){
   el.innerHTML=rows.length
     ? rows.map(bookings=>{
         const c=bookings[0];
-        const updates=bookings.filter(b=>b.customerUpdate);
+        const updates=bookings.filter(b=>b.customerUpdate===true || b.customerUpdate==="true");
         const hasUpdate=updates.length>0;
 
         const updateText=updates.some(b=>b.customerUpdateType==="rescheduled")
