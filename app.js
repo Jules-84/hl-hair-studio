@@ -767,7 +767,44 @@ async function acknowledgeCustomerUpdate(id){
 }
 function manual(){
   const rows=S.services.map(s=>`<label style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.08)"><input type="checkbox" class="admin-manual-service" value="${s.id}" onchange="updateManualBookingSummary()"><span style="flex:1"><b>${esc(s.name)}</b><br><small>${durationText(s.duration)} · ${s.price===0?"Free":"£"+s.price}</small></span></label>`).join("");
-  modal(`<h2>Add booking</h2><h3>Services</h3><p class="muted" style="margin-top:0">Select one or more services for this appointment.</p><div style="max-height:330px;overflow:auto;margin-bottom:14px">${rows}</div><div id="manualBookingSummary" class="summary" style="margin-bottom:14px">Choose at least one service.</div><div class="form"><input id="mn" placeholder="Customer name"><input id="mp" placeholder="Mobile"><input id="me" type="email" placeholder="Email address"><input id="md" type="date" value="${$("#diaryDate").value}"><input id="mt" type="time" value="09:00"><textarea id="mnotes" placeholder="Notes"></textarea><button class="primary" onclick="manualSave()">Save booking</button></div>`);
+  modal(`<h2>Add booking</h2><h3>Services</h3><p class="muted" style="margin-top:0">Select one or more services for this appointment.</p><div style="max-height:330px;overflow:auto;margin-bottom:14px">${rows}</div><div id="manualBookingSummary" class="summary" style="margin-bottom:14px">Choose at least one service.</div><div class="form"><input id="mn" placeholder="Customer name"><input id="mp" placeholder="Mobile"><input id="me" type="email" placeholder="Email address"><input id="md" type="date" value="${$("#diaryDate").value}"><select id="mt">
+<option value="06:00">6:00 AM</option>
+<option value="06:30">6:30 AM</option>
+<option value="07:00">7:00 AM</option>
+<option value="07:30">7:30 AM</option>
+<option value="08:00">8:00 AM</option>
+<option value="08:30">8:30 AM</option>
+<option value="09:00" selected>9:00 AM</option>
+<option value="09:30">9:30 AM</option>
+<option value="10:00">10:00 AM</option>
+<option value="10:30">10:30 AM</option>
+<option value="11:00">11:00 AM</option>
+<option value="11:30">11:30 AM</option>
+<option value="12:00">12:00 PM</option>
+<option value="12:30">12:30 PM</option>
+<option value="13:00">1:00 PM</option>
+<option value="13:30">1:30 PM</option>
+<option value="14:00">2:00 PM</option>
+<option value="14:30">2:30 PM</option>
+<option value="15:00">3:00 PM</option>
+<option value="15:30">3:30 PM</option>
+<option value="16:00">4:00 PM</option>
+<option value="16:30">4:30 PM</option>
+<option value="17:00">5:00 PM</option>
+<option value="17:30">5:30 PM</option>
+<option value="18:00">6:00 PM</option>
+<option value="18:30">6:30 PM</option>
+<option value="19:00">7:00 PM</option>
+<option value="19:30">7:30 PM</option>
+<option value="20:00">8:00 PM</option>
+<option value="20:30">8:30 PM</option>
+<option value="21:00">9:00 PM</option>
+<option value="21:30">9:30 PM</option>
+<option value="22:00">10:00 PM</option>
+<option value="22:30">10:30 PM</option>
+<option value="23:00">11:00 PM</option>
+<option value="23:30">11:30 PM</option>
+</select><textarea id="mnotes" placeholder="Notes"></textarea><button class="primary" onclick="manualSave()">Save booking</button></div>`);
 }
 function manualSelectedServices(){
   return [...document.querySelectorAll(".admin-manual-service:checked")].map(el=>S.services.find(s=>s.id===el.value)).filter(Boolean);
