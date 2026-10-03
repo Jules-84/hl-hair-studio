@@ -767,7 +767,7 @@ async function acknowledgeCustomerUpdate(id){
 }
 function manual(){
   const rows=S.services.map(s=>`<label style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.08)"><input type="checkbox" class="admin-manual-service" value="${s.id}" onchange="updateManualBookingSummary()"><span style="flex:1"><b>${esc(s.name)}</b><br><small>${durationText(s.duration)} · ${s.price===0?"Free":"£"+s.price}</small></span></label>`).join("");
-  modal(`<h2>Add booking</h2><h3>Services</h3><p class="muted" style="margin-top:0">Select one or more services for this appointment.</p><div style="max-height:330px;overflow:auto;margin-bottom:14px">${rows}</div><div id="manualBookingSummary" class="summary" style="margin-bottom:14px">Choose at least one service.</div><div class="form"><input id="mn" placeholder="Customer name"><input id="mp" placeholder="Mobile"><input id="me" type="email" placeholder="Email address"><input id="md" type="date" value="${$("#diaryDate").value}"><select id="mt">
+  modal(`<h2>Add booking</h2><h3>Services</h3><p class="muted" style="margin-top:0">Select one or more services for this appointment.</p><div style="max-height:330px;overflow:auto;margin-bottom:14px">${rows}</div><div id="manualBookingSummary" class="summary" style="margin-bottom:14px">Choose at least one service.</div><div class="form"><input id="mn" placeholder="Customer name"><input id="mp" placeholder="Mobile (optional)"><input id="me" type="email" placeholder="Email address"><input id="md" type="date" value="${$("#diaryDate").value}"><select id="mt">
 <option value="06:00">6:00 AM</option>
 <option value="06:30">6:30 AM</option>
 <option value="07:00">7:00 AM</option>
@@ -828,7 +828,7 @@ async function manualSave(){
   let booking={
     id:uid(),
     name:$("#mn").value||"Customer",
-    phone:$("#mp").value,
+    phone:$("#mp").value.trim(),
     email:$("#me")?.value||"",
     notes:$("#mnotes").value,
     serviceId:primary.id,
@@ -875,7 +875,7 @@ async function manualSave(){
 function renderCustomers(){
   let m={};
   S.bookings.filter(b=>!b.customerHidden).forEach(b=>{
-    let k=b.phone||b.email||b.name;
+    let k=`${(b.name||"").trim().toLowerCase()}|${(b.phone||"").trim()}`;
     m[k]=m[k]||{name:b.name,phone:b.phone,email:b.email||"",count:0,customerUpdate:false,updateTypes:[]};
     m[k].count++;
     if(b.customerUpdate){
@@ -885,14 +885,14 @@ function renderCustomers(){
   });
   $("#customerList").innerHTML=Object.values(m).map(c=>{
     const updateText=c.updateTypes.includes("rescheduled")?"Appointment rescheduled":c.updateTypes.includes("notes")?"Notes changed":"Customer update";
-    return `<div class="adminrow customer-row" onclick="openCustomer('${encodeURIComponent(c.phone)}')"><div><b>${esc(c.name)}</b><br>${esc(c.phone)}${c.customerUpdate?`<div style="margin-top:7px"><span style="display:inline-block;background:#fae2c9;border:1px solid #e8bd91;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:700">● CUSTOMER UPDATE · ${updateText}</span></div>`:""}</div><small>${c.count} booking(s) · View →</small></div>`;
+    return `<div class="adminrow customer-row" onclick="openCustomer('${encodeURIComponent(c.phone)}','${encodeURIComponent(c.name)}')"><div><b>${esc(c.name)}</b><br>${esc(c.phone)}${c.customerUpdate?`<div style="margin-top:7px"><span style="display:inline-block;background:#fae2c9;border:1px solid #e8bd91;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:700">● CUSTOMER UPDATE · ${updateText}</span></div>`:""}</div><small>${c.count} booking(s) · View →</small></div>`;
   }).join("")||"No customers yet.";
 }
-function openCustomer(encodedPhone){
-  const phone=decodeURIComponent(encodedPhone),rows=S.bookings.filter(b=>b.phone===phone).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));if(!rows.length)return;
+function openCustomer(encodedPhone,encodedName){
+  const phone=decodeURIComponent(encodedPhone),name=decodeURIComponent(encodedName),rows=S.bookings.filter(b=>b.phone===phone&&b.name===name).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));if(!rows.length)return;
   const c=rows[0],up=rows.filter(b=>b.status!=="cancelled"&&b.date>=today()),past=rows.filter(b=>b.date<today()||["cancelled","no_show","completed"].includes(b.status));
   const card=b=>`<div class="customer-booking-detail"><div>${b.customerUpdate?`<span style="display:inline-block;background:#fae2c9;border:1px solid #e8bd91;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:700;margin-bottom:5px">● New customer update${b.customerUpdateType==="rescheduled"?" · Rescheduled":b.customerUpdateType==="notes"?" · Notes changed":""}</span><br>`:""}<b>${esc(b.serviceName)}</b><br><span>${nice(b.date)} at ${b.time}</span><br><small>${b.status==="cancelled"?"Cancelled":b.status==="completed"?"Completed":b.status==="no_show"?"No-show":"Booked"}${b.bookingRef?` · Ref ${esc(b.bookingRef)}`:""}</small>${b.notes?`<div style="margin-top:7px;font-size:13px"><b>Notes:</b> ${esc(b.notes)}</div>`:""}</div><div style="text-align:right"><b>${b.price===0?"Free":"£"+b.price}</b>${b.deposit?`<br><small>Deposit ${b.depositPaid?"paid":"due"}</small>`:""}<br><button type="button" class="text-back" style="margin-top:8px" onclick="event.stopPropagation();openAdminBookingEditor('${b.id}')">Edit</button>${b.customerUpdate?`<br><button type="button" class="text-back" style="margin-top:12px;white-space:nowrap" onclick="event.stopPropagation();acknowledgeCustomerUpdateFromCustomer('${b.id}','${encodeURIComponent(phone)}')">Mark update as seen</button>`:""}</div></div>`;
-  modal(`<div class="customer-profile"><span class="admin-kicker">CUSTOMER</span><h2>${esc(c.name)}</h2><button type="button" class="text-back" style="margin:0 0 14px" onclick="editCustomerDetails('${encodeURIComponent(phone)}')">Edit customer details</button><div class="customer-contact"><b>Mobile</b><span>${esc(c.phone||"—")}</span><b>Email</b><span>${esc(c.email||"—")}</span></div><h3>Upcoming appointments</h3>${up.length?up.map(card).join(""):"<p>No upcoming appointments.</p>"}<h3>Booking history</h3>${past.length?past.map(card).join(""):"<p>No previous appointments.</p>"}<div style="margin-top:24px"><button class="danger-btn" onclick="deleteCustomer('${encodeURIComponent(phone)}')">Delete customer</button><p class="muted" style="margin-top:8px">Removes this person from your Customers list. Their appointment history is kept.</p></div></div>`);
+  modal(`<div class="customer-profile"><span class="admin-kicker">CUSTOMER</span><h2>${esc(c.name)}</h2><button type="button" class="text-back" style="margin:0 0 14px" onclick="editCustomerDetails('${encodeURIComponent(phone)}')">Edit customer details</button><div class="customer-contact"><b>Mobile</b><span>${esc(c.phone||"—")}</span><b>Email</b><span>${esc(c.email||"—")}</span></div><h3>Upcoming appointments</h3>${up.length?up.map(card).join(""):"<p>No upcoming appointments.</p>"}<h3>Booking history</h3>${past.length?past.map(card).join(""):"<p>No previous appointments.</p>"}<div style="margin-top:24px"><button class="danger-btn" onclick="deleteCustomer('${encodeURIComponent(phone)}','${encodeURIComponent(c.name)}')">Delete customer</button><p class="muted" style="margin-top:8px">Removes this person from your Customers list. Their appointment history is kept.</p></div></div>`);
 }
 async function acknowledgeCustomerUpdateFromCustomer(id,encodedPhone){
   const b=S.bookings.find(x=>x.id===id);if(!b)return;
@@ -928,9 +928,9 @@ async function saveCustomerDetails(encodedPhone){
     console.error(e);previous.forEach(x=>Object.assign(x.b,{name:x.name,phone:x.phone,email:x.email}));save();adminRender();toast("Could not update customer details");
   }
 }
-async function deleteCustomer(encodedPhone){
-  const phone=decodeURIComponent(encodedPhone);
-  const rows=S.bookings.filter(b=>b.phone===phone);
+async function deleteCustomer(encodedPhone,encodedName){
+  const phone=decodeURIComponent(encodedPhone),name=decodeURIComponent(encodedName);
+  const rows=S.bookings.filter(b=>b.phone===phone&&b.name===name);
 
   if(!rows.length)return;
 
@@ -942,11 +942,10 @@ async function deleteCustomer(encodedPhone){
 
   try{
     if(window.CloudDB?.enabled()&&typeof CloudDB.deleteCustomerBookings==="function"){
-      await CloudDB.deleteCustomerBookings(phone);
+      await CloudDB.deleteCustomerBookings(phone,name);
     }
 
-    S.bookings=S.bookings.filter(b=>b.phone!==phone);
-
+    S.bookings=S.bookings.filter(b=>!(b.phone===phone&&b.name===name));
     save();
     closeModal();
     adminRender();
