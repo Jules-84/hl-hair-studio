@@ -319,7 +319,6 @@ async function deleteCustomerBookings(phone,name){
 
   const value=String(phone||"").trim();
 const customerName=String(name||"").trim();
-if(!value)throw new Error("Customer mobile number is missing");
 if(!customerName)throw new Error("Customer name is missing");
 
   const {error}=await client.rpc("admin_delete_customer_bookings",{
