@@ -939,7 +939,7 @@ async function saveCustomerDetails(encodedPhone){
 }
 async function deleteCustomer(encodedPhone,encodedName){
   const phone=decodeURIComponent(encodedPhone),name=decodeURIComponent(encodedName);
-  const rows=S.bookings.filter(b=>b.phone===phone&&b.name===name);
+  const rows=S.bookings.filter(b=>b.name===name&&(!phone||(b.phone||"")===phone));
 
   if(!rows.length)return;
 
