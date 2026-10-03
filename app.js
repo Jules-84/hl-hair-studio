@@ -895,7 +895,7 @@ function openCustomer(encodedPhone,encodedName){
     .filter(b=>b.name===customerName&&(!phone||(b.phone||"")===phone))
     .sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));
 
-  if(!rows.length)return;
+  if(!rows.length){console.log("NO MATCH", {encodedPhone,encodedName,phone,customerName});return;}
 
   const c=rows[0];
   const up=rows.filter(b=>b.status!=="cancelled"&&b.date>=today());
