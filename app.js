@@ -953,7 +953,7 @@ async function deleteCustomer(encodedPhone,encodedName){
       await CloudDB.deleteCustomerBookings(phone,name);
     }
 
-    S.bookings=S.bookings.filter(b=>!(b.phone===phone&&b.name===name));
+    S.bookings=S.bookings.filter(b=>!(b.name===name&&(!phone||(b.phone||"")===phone)));
     save();
     closeModal();
     adminRender();
