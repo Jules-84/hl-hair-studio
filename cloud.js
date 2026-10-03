@@ -158,7 +158,7 @@
 
     const payload={
       customer_name:b.name,
-      phone:b.phone,
+      phone:(b.phone||"").trim()||null,
       email:b.email||null,
       notes:b.notes||null,
       service_id:b.serviceId,
@@ -314,15 +314,18 @@
     if(error)throw error;
     return true;
   }
-async function deleteCustomerBookings(phone){
+async function deleteCustomerBookings(phone,name){
   if(!client)return {localOnly:true};
 
   const value=String(phone||"").trim();
-  if(!value)throw new Error("Customer mobile number is missing");
+const customerName=String(name||"").trim();
+if(!value)throw new Error("Customer mobile number is missing");
+if(!customerName)throw new Error("Customer name is missing");
 
   const {error}=await client.rpc("admin_delete_customer_bookings",{
-    p_phone:value
-  });
+  p_phone:value,
+  p_name:customerName
+});
 
   if(error)throw error;
   return true;
