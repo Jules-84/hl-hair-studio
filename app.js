@@ -885,7 +885,7 @@ function renderCustomers(){
   });
   $("#customerList").innerHTML=Object.values(m).map(c=>{
     const updateText=c.updateTypes.includes("rescheduled")?"Appointment rescheduled":c.updateTypes.includes("notes")?"Notes changed":"Customer update";
-    return `<div class="adminrow customer-row" onclick="openCustomer('${encodeURIComponent(c.phone)}','${encodeURIComponent(c.name)}')"><div><b>${esc(c.name)}</b><br>${esc(c.phone)}${c.customerUpdate?`<div style="margin-top:7px"><span style="display:inline-block;background:#fae2c9;border:1px solid #e8bd91;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:700">● CUSTOMER UPDATE · ${updateText}</span></div>`:""}</div><small>${c.count} booking(s) · View →</small></div>`;
+    return `<div class="adminrow customer-row" onclick="openCustomer('${encodeURIComponent(c.phone||"")}','${encodeURIComponent(c.name)}')"><div><b>${esc(c.name)}</b><br>${esc(c.phone)}${c.customerUpdate?`<div style="margin-top:7px"><span style="display:inline-block;background:#fae2c9;border:1px solid #e8bd91;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:700">● CUSTOMER UPDATE · ${updateText}</span></div>`:""}</div><small>${c.count} booking(s) · View →</small></div>`;
   }).join("")||"No customers yet.";
 }
 function openCustomer(encodedPhone,encodedName){
