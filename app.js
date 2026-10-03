@@ -934,7 +934,6 @@ async function deleteCustomer(encodedPhone,encodedName){
 
   if(!rows.length)return;
 
-  const name=rows[0].name||"this customer";
 
   if(!confirm(
     `Delete ${name}?\n\nThis will permanently delete this customer AND all of their appointments from the diary. This cannot be undone.`
