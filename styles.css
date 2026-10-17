@@ -777,3 +777,23 @@ header{
   color: #302626;
   cursor: pointer;
 }
+/* Fix Choose date and Block time buttons under diary date */
+.diary-toolbar .diary-calendar-picker,
+.diary-toolbar .today-btn {
+  width: auto !important;
+  min-width: max-content !important;
+  height: 38px !important;
+  padding: 8px 12px !important;
+  border-radius: 999px !important;
+  border: 1px solid #d8c5b7 !important;
+  background: #fff !important;
+  color: #302626 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+}
