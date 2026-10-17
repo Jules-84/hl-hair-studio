@@ -698,7 +698,7 @@ function renderDiaryCalendarMonth(){
   const has=booked.has(date);
   cells+=`<button type="button" class="diary-calendar-day${has?" has-bookings":""}${date===window.diaryDate?" selected":""}" aria-label="${date}${has?", bookings present":""}" onclick="diaryChooseDate('${date}');document.getElementById('diaryCalendarPopup')?.remove()">${day}</button>`;
  }
- popup.innerHTML=`<div class="diary-calendar-head"><button type="button" onclick="diaryCalendarShift(-1)" aria-label="Previous month">‹</button><b>${first.toLocaleDateString("en-GB",{month:"long",year:"numeric"})}</b><button type="button" onclick="diaryCalendarShift(1)" aria-label="Next month">›</button></div><div class="diary-calendar-grid">${cells}</div><div class="diary-calendar-legend"><i></i> Red dates have appointments</div>`;
+ popup.innerHTML=`<div class="diary-calendar-head"><button type="button" onclick="event.stopPropagation();diaryCalendarShift(-1)" aria-label="Previous month">‹</button><b>${first.toLocaleDateString("en-GB",{month:"long",year:"numeric"})}</b><button type="button" onclick="event.stopPropagation();diaryCalendarShift(1)" aria-label="Next month">›</button></div><div class="diary-calendar-grid">${cells}</div><div class="diary-calendar-legend"><i></i> Red dates have appointments</div>`;
 }
 document.addEventListener("click",function(e){
  const popup=document.getElementById("diaryCalendarPopup");
