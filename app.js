@@ -675,8 +675,14 @@ function openDiaryCalendar(button){
  renderDiaryCalendarMonth();
 }
 function diaryCalendarShift(n){
- const [y,m]=diaryCalendarMonth.split("-").map(Number);
- diaryCalendarMonth=diaryIso(new Date(y,m-1+n,1)).slice(0,7);
+ const [year, month] = diaryCalendarMonth.split("-").map(Number);
+ const next = new Date(year, month - 1, 1);
+ next.setMonth(next.getMonth() + n);
+
+ diaryCalendarMonth =
+   next.getFullYear() + "-" +
+   String(next.getMonth() + 1).padStart(2, "0");
+
  renderDiaryCalendarMonth();
 }
 function renderDiaryCalendarMonth(){
