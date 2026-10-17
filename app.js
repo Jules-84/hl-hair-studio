@@ -663,7 +663,7 @@ function renderDiary(){
    <div class="diary-scroll">
      <div class="timeline-wrap" style="height:${height}px;min-width:${laneWidth+58}px">
        <div class="time-axis">${hours}</div>
-       <div class="appointment-lane" style="width:${laneWidth}px">${blockCards}${cards||(!blockCards?'<div class="no-day-bookings" style="width:100%;text-align:center;box-sizing:border-box;">No appointments booked for this day.</div>':"")}</div>
+       <div class="no-day-bookings" style="width:100%;text-align:center;box-sizing:border-box;transform:translateX(60px);">
      </div>
    </div>
  </div>`;
