@@ -622,8 +622,17 @@ function renderDiary(){
  .key-due{background:#f6dada}.key-paid{background:#dcefdc}.key-update{background:#fae2c9}.key-completed{background:#eadff2}.key-closed{background:#e9e5e3}
  .diary-block-card{position:absolute;left:8px;right:8px;z-index:1;box-sizing:border-box;text-align:left;border:1px dashed #a7a7a7;border-radius:9px;background:rgba(210,210,210,.72);padding:7px 10px;display:flex;flex-direction:column;gap:3px;cursor:pointer;color:#383838}
  .diary-block-card small{font-size:11px}
- .diary-calendar-picker{position:relative;display:inline-flex;align-items:center;padding:8px 12px;border:1px solid #d8c5b7;border-radius:9px;cursor:pointer;font-size:13px;white-space:nowrap;overflow:hidden}
- .diary-calendar-picker input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px}
+ .diary-calendar-picker{display:inline-flex;align-items:center;padding:8px 12px;border:1px solid #d8c5b7;border-radius:9px;cursor:pointer;font-size:13px;white-space:nowrap;background:transparent}
+ .diary-calendar-popup{position:fixed;z-index:10001;width:min(340px,calc(100vw - 24px));padding:15px;background:#fff;border:1px solid #d8c5b7;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.2);color:#302626}
+ .diary-calendar-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+ .diary-calendar-head button{border:1px solid #e5d8d2;border-radius:8px;background:#fff;padding:6px 12px;cursor:pointer}
+ .diary-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+ .diary-calendar-weekday{text-align:center;font-size:11px;color:#777;padding:7px 0}
+ .diary-calendar-day{min-height:37px;border:1px solid transparent;border-radius:8px;background:#f8f5f3;color:#302626;cursor:pointer;font-size:13px}
+ .diary-calendar-day.has-bookings{background:#f6dada;color:#9b2835;font-weight:700}
+ .diary-calendar-day.selected{outline:2px solid #916b82;outline-offset:-2px}
+ .diary-calendar-legend{display:flex;align-items:center;gap:7px;font-size:11px;color:#666;margin-top:12px}
+ .diary-calendar-legend i{width:11px;height:11px;background:#f6dada;border-radius:3px}
  @media(max-width:900px){.diary-colour-key{gap:6px;font-size:9px}}
  </style><div class="visual-diary ${isPhone?"phone-timeline":""}">
    <div class="diary-toolbar">
@@ -632,7 +641,7 @@ function renderDiary(){
      <div><small>APPOINTMENTS</small><h3>${nice(date)}</h3></div>
      <button aria-label="Next day" onclick="diaryMove(1)">\u203A</button>
    </div>
-   <div class="diary-actions"><button class="today-btn" onclick="diaryToday()">Today</button><label class="diary-calendar-picker">📅 Choose date<input type="date" aria-label="Choose diary date" value="${date}" onchange="diaryChooseDate(this.value)"></label><button class="today-btn" onclick="diaryBlockForm()">🔒 Block time</button><span>${bookings.length} appointment${bookings.length===1?"":"s"}</span></div>
+   <div class="diary-actions"><button class="today-btn" onclick="diaryToday()">Today</button><button type="button" class="diary-calendar-picker" onclick="openDiaryCalendar(this)">📅 Choose date</button><button class="today-btn" onclick="diaryBlockForm()">🔒 Block time</button><span>${bookings.length} appointment${bookings.length===1?"":"s"}</span></div>
    <div class="diary-scroll">
      <div class="timeline-wrap" style="height:${height}px;min-width:${laneWidth+58}px">
        <div class="time-axis">${hours}</div>
@@ -650,6 +659,45 @@ function diaryMove(n){
 }
 function diaryToday(){window.diaryDate=today();const input=$("#diaryDate");if(input)input.value=window.diaryDate;renderDiary()}
 function diaryChooseDate(date){if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return;window.diaryDate=date;const input=$("#diaryDate");if(input)input.value=date;renderDiary()}
+let diaryCalendarMonth="";
+function openDiaryCalendar(button){
+ const previous=document.getElementById("diaryCalendarPopup");
+ if(previous){previous.remove();return}
+ const date=window.diaryDate||today();
+ diaryCalendarMonth=date.slice(0,7);
+ const popup=document.createElement("div");
+ popup.id="diaryCalendarPopup";popup.className="diary-calendar-popup";
+ popup.setAttribute("role","dialog");popup.setAttribute("aria-label","Choose diary date");
+ document.body.appendChild(popup);
+ const r=button.getBoundingClientRect();
+ popup.style.top=Math.max(12,Math.min(r.bottom+7,window.innerHeight-375))+"px";
+ popup.style.left=Math.max(12,Math.min(r.left,window.innerWidth-352))+"px";
+ renderDiaryCalendarMonth();
+}
+function diaryCalendarShift(n){
+ const [y,m]=diaryCalendarMonth.split("-").map(Number);
+ diaryCalendarMonth=diaryIso(new Date(y,m-1+n,1)).slice(0,7);
+ renderDiaryCalendarMonth();
+}
+function renderDiaryCalendarMonth(){
+ const popup=document.getElementById("diaryCalendarPopup");if(!popup)return;
+ const [y,m]=diaryCalendarMonth.split("-").map(Number);
+ const first=new Date(y,m-1,1),days=new Date(y,m,0).getDate();
+ const offset=(first.getDay()+6)%7;
+ const booked=new Set(S.bookings.filter(b=>b.status!=="cancelled"&&b.status!=="no_show").map(b=>b.date));
+ let cells=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(x=>`<span class="diary-calendar-weekday">${x}</span>`).join("");
+ for(let i=0;i<offset;i++)cells+="<span></span>";
+ for(let day=1;day<=days;day++){
+  const date=`${diaryCalendarMonth}-${String(day).padStart(2,"0")}`;
+  const has=booked.has(date);
+  cells+=`<button type="button" class="diary-calendar-day${has?" has-bookings":""}${date===window.diaryDate?" selected":""}" aria-label="${date}${has?", bookings present":""}" onclick="diaryChooseDate('${date}');document.getElementById('diaryCalendarPopup')?.remove()">${day}</button>`;
+ }
+ popup.innerHTML=`<div class="diary-calendar-head"><button type="button" onclick="diaryCalendarShift(-1)" aria-label="Previous month">‹</button><b>${first.toLocaleDateString("en-GB",{month:"long",year:"numeric"})}</b><button type="button" onclick="diaryCalendarShift(1)" aria-label="Next month">›</button></div><div class="diary-calendar-grid">${cells}</div><div class="diary-calendar-legend"><i></i> Red dates have appointments</div>`;
+}
+document.addEventListener("click",function(e){
+ const popup=document.getElementById("diaryCalendarPopup");
+ if(popup&&!popup.contains(e.target)&&!e.target.closest(".diary-calendar-picker"))popup.remove();
+});
 function openDiaryBooking(id){
  let b=S.bookings.find(x=>x.id===id);if(!b)return;
  const depositHtml=Number(b.deposit)>0
