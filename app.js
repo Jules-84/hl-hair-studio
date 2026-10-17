@@ -618,6 +618,8 @@ function renderDiary(){
  .diary-colour-key span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
  .diary-colour-key i{width:10px;height:10px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.12)}
  .key-due{background:#f6dada}.key-paid{background:#dcefdc}.key-update{background:#fae2c9}.key-completed{background:#eadff2}.key-closed{background:#e9e5e3}
+ .diary-calendar-picker{position:relative;display:inline-flex;align-items:center;padding:8px 12px;border:1px solid #d8c5b7;border-radius:9px;cursor:pointer;font-size:13px;white-space:nowrap;overflow:hidden}
+ .diary-calendar-picker input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px}
  @media(max-width:900px){.diary-colour-key{gap:6px;font-size:9px}}
  </style><div class="visual-diary ${isPhone?"phone-timeline":""}">
    <div class="diary-toolbar">
@@ -626,7 +628,7 @@ function renderDiary(){
      <div><small>APPOINTMENTS</small><h3>${nice(date)}</h3></div>
      <button aria-label="Next day" onclick="diaryMove(1)">\u203A</button>
    </div>
-   <div class="diary-actions"><button class="today-btn" onclick="diaryToday()">Today</button><span>${bookings.length} appointment${bookings.length===1?"":"s"}</span></div>
+   <div class="diary-actions"><button class="today-btn" onclick="diaryToday()">Today</button><label class="diary-calendar-picker">📅 Choose date<input type="date" aria-label="Choose diary date" value="${date}" onchange="diaryChooseDate(this.value)"></label><span>${bookings.length} appointment${bookings.length===1?"":"s"}</span></div>
    <div class="diary-scroll">
      <div class="timeline-wrap" style="height:${height}px;min-width:${laneWidth+58}px">
        <div class="time-axis">${hours}</div>
@@ -643,6 +645,7 @@ function diaryMove(n){
  renderDiary();
 }
 function diaryToday(){window.diaryDate=today();const input=$("#diaryDate");if(input)input.value=window.diaryDate;renderDiary()}
+function diaryChooseDate(date){if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return;window.diaryDate=date;const input=$("#diaryDate");if(input)input.value=date;renderDiary()}
 function openDiaryBooking(id){
  let b=S.bookings.find(x=>x.id===id);if(!b)return;
  const depositHtml=Number(b.deposit)>0
