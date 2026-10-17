@@ -635,13 +635,26 @@ function renderDiary(){
  .diary-calendar-legend i{width:11px;height:11px;background:#f6dada;border-radius:3px}
  @media(max-width:900px){.diary-colour-key{gap:6px;font-size:9px}}
  </style><div class="visual-diary ${isPhone?"phone-timeline":""}">
-   <div class="diary-toolbar">
-     <button aria-label="Previous day" onclick="diaryMove(-1)">\u2039</button>
-     
-     <div><small>APPOINTMENTS</small><h3>${nice(date)}</h3></div>
-     <button aria-label="Next day" onclick="diaryMove(1)">\u203A</button>
-   </div>
-   <div class="diary-actions"><button class="today-btn" onclick="diaryToday()">Today</button><button type="button" class="diary-calendar-picker" onclick="openDiaryCalendar(this)">📅 Choose date</button><button class="today-btn" onclick="diaryBlockForm()">🔒 Block time</button><span>${bookings.length} appointment${bookings.length===1?"":"s"}</span></div>
+  <div class="diary-toolbar">
+  <button aria-label="Previous day" onclick="diaryMove(-1)">&#8249;</button>
+
+  <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+    <div>
+      <small>APPOINTMENTS</small>
+      <h3>${nice(date)}</h3>
+    </div>
+
+    <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap">
+      <button type="button" class="diary-calendar-picker"
+        onclick="openDiaryCalendar(this)">📅 Choose date</button>
+      <button type="button" class="today-btn"
+        onclick="diaryBlockForm()">🔒 Block time</button>
+    </div>
+  </div>
+
+  <button aria-label="Next day" onclick="diaryMove(1)">&#8250;</button>
+</div>
+  <div class="diary-actions"><button class="today-btn" onclick="diaryToday()">Today</button><span>${bookings.length} appointment${bookings.length===1?"":"s"}</span></div>
    <div class="diary-scroll">
      <div class="timeline-wrap" style="height:${height}px;min-width:${laneWidth+58}px">
        <div class="time-axis">${hours}</div>
