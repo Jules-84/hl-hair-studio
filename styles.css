@@ -757,3 +757,23 @@ header{
 .diary-actions > span:last-child {
   justify-self: end;
 }
+/* Fix diary toolbar buttons */
+.diary-toolbar .diary-calendar-picker,
+.diary-toolbar .today-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: max-content;
+  height: 38px;
+  padding: 8px 12px;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  border: 1px solid #d8c5b7;
+  border-radius: 9px;
+  background: #fff;
+  color: #302626;
+  cursor: pointer;
+}
