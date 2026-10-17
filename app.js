@@ -633,28 +633,30 @@ function renderDiary(){
  .diary-calendar-day.selected{outline:2px solid #916b82;outline-offset:-2px}
  .diary-calendar-legend{display:flex;align-items:center;gap:7px;font-size:11px;color:#666;margin-top:12px}
  .diary-calendar-legend i{width:11px;height:11px;background:#f6dada;border-radius:3px}
+  /* Three columns: previous arrow, centred date/buttons, next arrow */
+  .visual-diary .diary-toolbar.diary-toolbar-fixed{display:grid!important;grid-template-columns:44px minmax(0,1fr) 44px!important;align-items:center!important;gap:8px!important;min-height:116px!important}
+  .visual-diary .diary-toolbar-fixed>.diary-toolbar-centre{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:8px!important;min-width:0!important;text-align:center!important}
+  .visual-diary .diary-toolbar-fixed .diary-toolbar-date{display:block!important;min-width:0!important}
+  .visual-diary .diary-toolbar-fixed .diary-toolbar-date h3{margin:2px 0 0!important}
+  .visual-diary .diary-toolbar-fixed .diary-toolbar-shortcuts{display:flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;flex-wrap:wrap!important;width:auto!important;min-width:0!important}
+  .visual-diary .diary-toolbar-fixed .diary-toolbar-shortcuts>button{position:static!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 auto!important;width:auto!important;min-width:max-content!important;max-width:none!important;height:36px!important;min-height:36px!important;padding:7px 12px!important;margin:0!important;border:1px solid #d8c5b7!important;border-radius:10px!important;background:#fff!important;color:#302626!important;font-size:13px!important;font-weight:600!important;line-height:1.2!important;white-space:nowrap!important;transform:none!important}
+  .visual-diary .diary-actions.diary-actions-fixed{display:flex!important;justify-content:space-between!important;align-items:center!important;gap:8px!important}
+  .visual-diary .diary-actions-fixed>span{margin-left:auto!important;text-align:right!important}
+  @media(max-width:480px){.visual-diary .diary-toolbar.diary-toolbar-fixed{grid-template-columns:36px minmax(0,1fr) 36px!important;gap:3px!important}.visual-diary .diary-toolbar-fixed .diary-toolbar-shortcuts{gap:5px!important}.visual-diary .diary-toolbar-fixed .diary-toolbar-shortcuts>button{font-size:11px!important;padding:6px 8px!important;min-height:34px!important;height:34px!important}}
  @media(max-width:900px){.diary-colour-key{gap:6px;font-size:9px}}
  </style><div class="visual-diary ${isPhone?"phone-timeline":""}">
-  <div class="diary-toolbar">
-  <button aria-label="Previous day" onclick="diaryMove(-1)">&#8249;</button>
-
-  <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
-    <div>
-      <small>APPOINTMENTS</small>
-      <h3>${nice(date)}</h3>
+  <div class="diary-toolbar diary-toolbar-fixed">
+    <button type="button" aria-label="Previous day" onclick="diaryMove(-1)">&#8249;</button>
+    <div class="diary-toolbar-centre">
+      <div class="diary-toolbar-date"><small>APPOINTMENTS</small><h3>${nice(date)}</h3></div>
+      <div class="diary-toolbar-shortcuts">
+        <button type="button" class="diary-calendar-picker" onclick="openDiaryCalendar(this)">📅 Choose date</button>
+        <button type="button" class="diary-block-shortcut-btn" onclick="diaryBlockForm()">🔒 Block time</button>
+      </div>
     </div>
-
-    <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap">
-      <button type="button" class="diary-calendar-picker"
-        onclick="openDiaryCalendar(this)">📅 Choose date</button>
-      <button type="button" class="today-btn"
-        onclick="diaryBlockForm()">🔒 Block time</button>
-    </div>
+    <button type="button" aria-label="Next day" onclick="diaryMove(1)">&#8250;</button>
   </div>
-
-  <button aria-label="Next day" onclick="diaryMove(1)">&#8250;</button>
-</div>
-  <div class="diary-actions"><button class="today-btn" onclick="diaryToday()">Today</button><span>${bookings.length} appointment${bookings.length===1?"":"s"}</span></div>
+  <div class="diary-actions diary-actions-fixed"><button class="today-btn" onclick="diaryToday()">Today</button><span>${bookings.length} appointment${bookings.length===1?"":"s"}</span></div>
    <div class="diary-scroll">
      <div class="timeline-wrap" style="height:${height}px;min-width:${laneWidth+58}px">
        <div class="time-axis">${hours}</div>
