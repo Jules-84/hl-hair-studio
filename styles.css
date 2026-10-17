@@ -715,3 +715,26 @@ header{
   text-align:right !important;
   white-space:nowrap !important;
 }
+/* Centre diary date and block-time buttons */
+.diary-actions {
+  position: relative;
+}
+
+.diary-actions .diary-calendar-btn {
+  margin-right: 8px;
+}
+
+@media (min-width: 701px) {
+  .diary-actions {
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .diary-actions .today-btn {
+    margin-right: auto;
+  }
+
+  .diary-actions > span:last-child {
+    margin-left: auto;
+  }
+}
