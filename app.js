@@ -702,7 +702,12 @@ function renderDiaryCalendarMonth(){
 }
 document.addEventListener("click",function(e){
  const popup=document.getElementById("diaryCalendarPopup");
- if(popup&&!popup.contains(e.target)&&!e.target.closest(".diary-calendar-picker"))popup.remove();
+ if(!popup)return;
+
+ if(popup.contains(e.target))return;
+ if(e.target.closest(".diary-calendar-picker"))return;
+
+ popup.remove();
 });
 function openDiaryBooking(id){
  let b=S.bookings.find(x=>x.id===id);if(!b)return;
