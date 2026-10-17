@@ -574,6 +574,7 @@ function renderDiary(){
  if(!/^\d{4}-\d{2}-\d{2}$/.test(date))date=today();
  window.diaryDate=date;if(dateInput&&dateInput.value!==date)dateInput.value=date;
  const bookings=S.bookings.filter(b=>b.date===date&&b.status!=="cancelled").sort((a,b)=>a.time.localeCompare(b.time));
+ const dayBlocks=S.blocks.filter(b=>b.date===date);
  const isPhone=window.matchMedia&&window.matchMedia("(max-width: 700px)").matches;
 
  // Admin diary display is deliberately wider than customer bookable hours.
@@ -606,6 +607,7 @@ function renderDiary(){
       <small><b>${Number(x.price||0)===0?"Free":"£"+Number(x.price||0)}</b>${Number(x.deposit)?` · ${depositLabel}`:" · No deposit"}</small>
    </button>`;
  }).join("");
+ const blockCards=dayBlocks.map(b=>{const startM=mins(b.start),endM=mins(b.end);return `<button type="button" class="diary-block-card" style="top:${Math.max(0,(startM-start)*ppm)}px;height:${Math.max(30,(endM-startM)*ppm)}px" onclick="diaryBlockDetails('${b.id}')"><b>🔒 ${esc(b.reason||"Unavailable")}</b><small>${esc(b.start)}–${esc(b.end)}</small></button>`}).join("");
  const laneWidth=isPhone?Math.max(250,maxCols*(colWidth+gap)+16):Math.max(660,maxCols*(colWidth+gap)+24);
 
  el.innerHTML=`<style>
@@ -618,6 +620,8 @@ function renderDiary(){
  .diary-colour-key span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
  .diary-colour-key i{width:10px;height:10px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.12)}
  .key-due{background:#f6dada}.key-paid{background:#dcefdc}.key-update{background:#fae2c9}.key-completed{background:#eadff2}.key-closed{background:#e9e5e3}
+ .diary-block-card{position:absolute;left:8px;right:8px;z-index:1;box-sizing:border-box;text-align:left;border:1px dashed #a7a7a7;border-radius:9px;background:rgba(210,210,210,.72);padding:7px 10px;display:flex;flex-direction:column;gap:3px;cursor:pointer;color:#383838}
+ .diary-block-card small{font-size:11px}
  .diary-calendar-picker{position:relative;display:inline-flex;align-items:center;padding:8px 12px;border:1px solid #d8c5b7;border-radius:9px;cursor:pointer;font-size:13px;white-space:nowrap;overflow:hidden}
  .diary-calendar-picker input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px}
  @media(max-width:900px){.diary-colour-key{gap:6px;font-size:9px}}
@@ -628,11 +632,11 @@ function renderDiary(){
      <div><small>APPOINTMENTS</small><h3>${nice(date)}</h3></div>
      <button aria-label="Next day" onclick="diaryMove(1)">\u203A</button>
    </div>
-   <div class="diary-actions"><button class="today-btn" onclick="diaryToday()">Today</button><label class="diary-calendar-picker">📅 Choose date<input type="date" aria-label="Choose diary date" value="${date}" onchange="diaryChooseDate(this.value)"></label><span>${bookings.length} appointment${bookings.length===1?"":"s"}</span></div>
+   <div class="diary-actions"><button class="today-btn" onclick="diaryToday()">Today</button><label class="diary-calendar-picker">📅 Choose date<input type="date" aria-label="Choose diary date" value="${date}" onchange="diaryChooseDate(this.value)"></label><button class="today-btn" onclick="diaryBlockForm()">🔒 Block time</button><span>${bookings.length} appointment${bookings.length===1?"":"s"}</span></div>
    <div class="diary-scroll">
      <div class="timeline-wrap" style="height:${height}px;min-width:${laneWidth+58}px">
        <div class="time-axis">${hours}</div>
-       <div class="appointment-lane" style="width:${laneWidth}px">${cards||'<div class="no-day-bookings">No appointments booked for this day.</div>'}</div>
+       <div class="appointment-lane" style="width:${laneWidth}px">${blockCards}${cards||(!blockCards?'<div class="no-day-bookings">No appointments booked for this day.</div>':"")}</div>
      </div>
    </div>
  </div>`;
@@ -1091,6 +1095,32 @@ async function saveHours(){
 
   adminRender();
 }
+
+function diaryBlockForm(){
+ const date=window.diaryDate||today();
+ modal(`<h2>Block time</h2><div class="form"><label>From date<input id="bd" type="date" value="${date}"></label><label>To date (optional)<input id="bdEnd" type="date" value="${date}"></label><label>Start time<input id="bs" type="time" value="12:00"></label><label>End time<input id="be2" type="time" value="13:00"></label><label>Reason<input id="br" placeholder="Lunch, holiday, unavailable"></label><label style="display:flex;gap:8px;align-items:center"><input id="blockAllDay" type="checkbox" onchange="diaryToggleAllDay(this.checked)">Whole day</label><button class="primary" onclick="diarySaveBlocks()">Save blocked time</button></div>`);
+}
+function diaryToggleAllDay(checked){const start=$("#bs"),end=$("#be2");start.disabled=checked;end.disabled=checked;if(checked){start.value="00:00";end.value="23:59"}else{start.value="12:00";end.value="13:00"}}
+async function diarySaveBlocks(){
+ const first=$("#bd").value,last=$("#bdEnd").value||first,start=$("#bs").value,end=$("#be2").value,reason=$("#br").value.trim()||"Unavailable";
+ if(!first||!last||last<first)return toast("Check the date range");
+ if(!start||!end||mins(end)<=mins(start))return toast("Check the start and end times");
+ const a=new Date(first+"T12:00"),z=new Date(last+"T12:00"),days=Math.round((z-a)/86400000);
+ if(days>90)return toast("Please select 90 days or fewer");
+ const button=$("#modalbody .primary");if(button)button.disabled=true;
+ try{
+   for(let i=0;i<=days;i++){
+     const d=new Date(a);d.setDate(a.getDate()+i);
+     const block={id:uid(),date:diaryIso(d),start,end,reason};
+     if(window.CloudDB?.enabled())await CloudDB.addBlockedTime(block);else S.blocks.push(block);
+   }
+   if(window.CloudDB?.enabled()){const rows=await CloudDB.fetchBlockedTimes();S.blocks=rows.map(normaliseCloudBlock)}
+   save();closeModal();adminRender();toast("Blocked time saved");
+ }catch(e){console.error(e);await syncCloudAvailability(false);adminRender();toast("Some blocked times may not have saved. Check the diary before retrying")}
+ finally{if(button)button.disabled=false}
+}
+function diaryBlockDetails(id){const b=S.blocks.find(x=>x.id===id);if(!b)return;modal(`<h2>🔒 Blocked time</h2><p><b>${esc(b.reason)}</b><br>${nice(b.date)}<br>${esc(b.start)}–${esc(b.end)}</p><button class="primary full" onclick="diaryRemoveBlock('${b.id}')">Remove this block</button>`)}
+async function diaryRemoveBlock(id){await blockDelete(id);if(!S.blocks.some(b=>b.id===id))closeModal()}
 
 function blockForm(){
   modal(`<h2>Block time</h2><div class="form"><input id="bd" type="date" value="${today()}"><input id="bs" type="time" value="12:00"><input id="be2" type="time" value="13:00"><input id="br" placeholder="Reason"><button class="primary" onclick="blockSave()">Block</button></div>`);
