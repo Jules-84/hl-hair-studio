@@ -738,3 +738,22 @@ header{
     margin-left: auto;
   }
 }
+/* Centre diary buttons directly beneath the date */
+.diary-actions {
+  display: grid;
+  grid-template-columns: 1fr auto auto 1fr;
+  align-items: center;
+  column-gap: 8px;
+}
+
+.diary-actions .today-btn:first-child {
+  justify-self: start;
+}
+
+.diary-actions .diary-calendar-picker {
+  justify-self: end;
+}
+
+.diary-actions > span:last-child {
+  justify-self: end;
+}
