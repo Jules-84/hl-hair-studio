@@ -797,3 +797,12 @@ header{
   justify-content: center !important;
   margin: 0 !important;
 }
+/* Centre the empty diary message across the visible diary */
+.no-day-bookings {
+  position: sticky !important;
+  left: 0 !important;
+  width: calc(100vw - 420px) !important;
+  max-width: 100% !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+}
