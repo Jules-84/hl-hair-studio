@@ -1170,9 +1170,26 @@ async function saveHours(){
 
 function diaryBlockForm(){
  const date=window.diaryDate||today();
- modal(`<h2>Block time</h2><div class="form"><label>From date<input id="bd" type="date" value="${date}"></label><label>To date (optional)<input id="bdEnd" type="date" value="${date}"></label><label>Start time<input id="bs" type="time" value="12:00"></label><label>End time<input id="be2" type="time" value="13:00"></label><label>Reason<input id="br" placeholder="Lunch, holiday, unavailable"></label><label style="display:flex;gap:8px;align-items:center"><input id="blockAllDay" type="checkbox" onchange="diaryToggleAllDay(this.checked)">Whole day</label><button class="primary" onclick="diarySaveBlocks()">Save blocked time</button></div>`);
+ modal(`<h2>Block time</h2><div class="form">
+ <input id="bd" type="date" value="${date}" aria-label="Date to block">
+ <input id="bdEnd" type="hidden" value="${date}">
+ <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin:4px 0 8px">
+ <input id="blockAllDay" type="checkbox" style="width:20px;height:20px;flex:0 0 20px;margin:0" onchange="diaryToggleAllDay(this.checked)">
+ <span>Whole day</span></label>
+ <div id="diaryBlockTimeFields" style="display:grid;gap:12px">
+ <input id="bs" type="time" value="12:00" aria-label="Start time">
+ <input id="be2" type="time" value="13:00" aria-label="End time">
+ </div>
+ <input id="br" placeholder="Reason (optional)" aria-label="Reason">
+ <button class="primary" onclick="diarySaveBlocks()">Block</button>
+ </div>`);
 }
-function diaryToggleAllDay(checked){const start=$("#bs"),end=$("#be2");start.disabled=checked;end.disabled=checked;if(checked){start.value="00:00";end.value="23:59"}else{start.value="12:00";end.value="13:00"}}
+function diaryToggleAllDay(checked){
+ const start=$("#bs"),end=$("#be2"),fields=$("#diaryBlockTimeFields");
+ if(fields)fields.style.display=checked?"none":"grid";
+ if(start)start.value=checked?"00:00":"12:00";
+ if(end)end.value=checked?"23:59":"13:00";
+}
 async function diarySaveBlocks(){
  const first=$("#bd").value,last=$("#bdEnd").value||first,start=$("#bs").value,end=$("#be2").value,reason=$("#br").value.trim()||"Unavailable";
  if(!first||!last||last<first)return toast("Check the date range");
