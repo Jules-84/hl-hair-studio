@@ -6,8 +6,9 @@
 <span class="key-update">Customer update</span>
 <span class="key-completed">Completed</span>
 <span class="key-closed">Cancelled / no-show</span></div><input id="diaryDate" type="hidden"></div><div id="diaryList"></div></div>
-<div id="customers" class="tab hide"><div class="head"><h2>Customers</h2></div><div id="customerList" class="card"></div></div>
-<div id="serviceAdmin" class="tab hide"><div class="head"><h2>Services</h2><button class="primary" onclick="serviceForm()">+ Add service</button></div><div id="serviceList" class="card"></div></div>
+</div>
+  <div id="customers" class="tab hide"><div class="head"><h2>Customers</h2></div><div id="customerList" class="card"></div></div>
+  <div id="serviceAdmin" class="tab hide"><div class="head"><h2>Services</h2><button class="primary" onclick="serviceForm()">+ Add service</button></div><div id="serviceList" class="card"></div></div>
 <div id="galleryAdmin" class="tab hide"><div class="head"><div><span>PORTFOLIO</span><h2>Gallery</h2><p>Add, edit, replace or delete the photos customers see. Changes sync across every device.</p></div><button class="primary" onclick="galleryAdd()">+ Add photo</button></div><div id="galleryAdminList" class="gallery-admin-list"></div></div>
 <div id="availability" class="tab hide"><div class="head"><h2>Availability</h2></div><div class="card"><h3>Working hours</h3><div id="hours"></div><button class="primary" onclick="saveHours()">Save hours</button></div><div class="card"><div class="head"><h3>Blocked time</h3><button onclick="blockForm()">+ Block time</button></div><div id="blocks"></div></div></div>
 <div id="settings" class="tab hide"><div class="head"><h2>Settings</h2></div><div class="card form"><label>Business name<input id="businessName"></label><label>Tagline<input id="tagline"></label><label>Admin PIN<input id="adminPin" type="password" inputmode="numeric"></label><button class="primary" onclick="saveSettings()">Save settings</button></div></div>
