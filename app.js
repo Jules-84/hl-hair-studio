@@ -1182,8 +1182,8 @@ function diaryBlockForm(){
  <input id="blockAllDay" type="checkbox" style="width:20px;height:20px;flex:0 0 20px;margin:0" onchange="diaryToggleAllDay(this.checked)">
  <span>Whole day</span></label>
  <div id="diaryBlockTimeFields" style="display:grid;gap:12px">
- <input id="bs" type="time" value="12:00" aria-label="Start time">
- <input id="be2" type="time" value="13:00" aria-label="End time">
+ <label>From</label><input id="bs" type="time" value="12:00" aria-label="Start time">
+ <label>To</label><input id="be2" type="time" value="13:00" aria-label="End time">
  </div>
  <input id="br" placeholder="Reason (optional)" aria-label="Reason">
  <button class="primary" onclick="diarySaveBlocks()">Block</button>
@@ -1217,7 +1217,7 @@ function diaryBlockDetails(id){const b=S.blocks.find(x=>x.id===id);if(!b)return;
 async function diaryRemoveBlock(id){await blockDelete(id);if(!S.blocks.some(b=>b.id===id))closeModal()}
 
 function blockForm(){
-  modal(`<h2>Block time</h2><div class="form"><input id="bd" type="date" value="${today()}"><input id="bs" type="time" value="12:00"><input id="be2" type="time" value="13:00"><input id="br" placeholder="Reason"><button class="primary" onclick="blockSave()">Block</button></div>`);
+  modal(`<h2>Block time</h2><div class="form"><input id="bd" type="date" value="${today()}"><label>From</label><input id="bs" type="time" value="12:00">><label>To</label><input id="be2" type="time" value="13:00">><input id="br" placeholder="Reason"><button class="primary" onclick="blockSave()">Block</button></div>`);
 }
 
 async function blockSave(){
