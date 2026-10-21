@@ -622,6 +622,7 @@ function renderDiary(){
  .key-due{background:#f6dada}.key-paid{background:#dcefdc}.key-update{background:#fae2c9}.key-completed{background:#eadff2}.key-closed{background:#e9e5e3}
  .diary-block-card{position:absolute;left:8px;right:8px;z-index:1;box-sizing:border-box;text-align:left;border:1px dashed #a7a7a7;border-radius:9px;background:rgba(210,210,210,.72);padding:7px 10px;display:flex;flex-direction:column;gap:3px;cursor:pointer;color:#383838}
  .diary-block-card small{font-size:11px}
+ .diary-block-card b{font-size:12px}
  .diary-calendar-picker{display:inline-flex;align-items:center;padding:8px 12px;border:1px solid #d8c5b7;border-radius:9px;cursor:pointer;font-size:13px;white-space:nowrap;background:transparent}
  .diary-calendar-popup{position:fixed;z-index:10001;width:min(340px,calc(100vw - 24px));padding:15px;background:#fff;border:1px solid #d8c5b7;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.2);color:#302626}
  .diary-calendar-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
