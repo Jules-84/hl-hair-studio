@@ -587,9 +587,14 @@ function renderDiary(){
  }
 let hourBoxes="";
 for(let h=6;h<24;h++){
-  hourBoxes+=`<div class="diary-hour-box"
-    style="top:${(h*60-start)*ppm}px;height:${60*ppm}px">
-  </div>`;
+  for(let col=0;col<4;col++){
+    hourBoxes+=`<div class="diary-hour-box"
+      style="top:${(h*60-start)*ppm}px;
+             height:${60*ppm}px;
+             left:${col*25}%;
+             width:25%">
+    </div>`;
+  }
 }
  const laid=[];
  bookings.forEach(x=>{
@@ -618,12 +623,12 @@ for(let h=6;h<24;h++){
  el.innerHTML=`<style>
  .diary-hour-box{
   position:absolute;
-  left:0;
-  right:0;
   box-sizing:border-box;
   border:1px solid #c9a99a;
 border-radius:6px;
-margin:3px 5px;
+margin:0;
+padding:0;
+transform:scale(0.96, 0.90);
   background:rgba(255,255,255,0.12);
   pointer-events:none;
   z-index:0;
