@@ -1177,7 +1177,7 @@ async function saveHours(){
 function diaryBlockForm(){
  const date=window.diaryDate||today();
  modal(`<h2>Block time</h2><div class="form">
- <input id="bd" type="date" value="${date}" aria-label="Date to block">
+<input id="bd" type="date" value="${date}" aria-label="Date to block" onchange="document.getElementById('bdEnd').value=this.value">
  <input id="bdEnd" type="hidden" value="${date}">
  <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin:4px 0 8px">
  <input id="blockAllDay" type="checkbox" style="width:20px;height:20px;flex:0 0 20px;margin:0" onchange="diaryToggleAllDay(this.checked)">
