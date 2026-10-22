@@ -856,6 +856,7 @@ async function acknowledgeCustomerUpdate(id){
  }catch(e){console.error(e);toast("Could not clear customer update")}
 }
 function manual(){
+   manualPriceOverride=null;
   const rows=S.services.map(s=>`<label style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.08)"><input type="checkbox" class="admin-manual-service" value="${s.id}" onchange="updateManualBookingSummary()"><span style="flex:1"><b>${esc(s.name)}</b><br><small>${durationText(s.duration)} · ${s.price===0?"Free":"£"+s.price}</small></span></label>`).join("");
   modal(`<h2>Add booking</h2><h3>Services</h3><p class="muted" style="margin-top:0">Select one or more services for this appointment.</p><div style="max-height:330px;overflow:auto;margin-bottom:14px">${rows}</div><div id="manualBookingSummary" class="summary" style="margin-bottom:14px">Choose at least one service.</div><div class="form"><input id="mn" placeholder="Customer name"><input id="mp" placeholder="Mobile (optional)"><input id="me" type="email" placeholder="Email address"><input id="md" type="date" value="${$("#diaryDate").value}"><select id="mt">
 <option value="06:00">6:00 AM</option>
@@ -899,13 +900,28 @@ function manual(){
 function manualSelectedServices(){
   return [...document.querySelectorAll(".admin-manual-service:checked")].map(el=>S.services.find(s=>s.id===el.value)).filter(Boolean);
 }
+let manualPriceOverride=null;
 function updateManualBookingSummary(){
   const services=manualSelectedServices(),el=$("#manualBookingSummary");if(!el)return;
   if(!services.length){el.innerHTML="Choose at least one service.";return}
   const duration=services.reduce((n,s)=>n+Number(s.duration||0),0);
-  const price=services.reduce((n,s)=>n+Number(s.price||0),0);
+  const price=manualPriceOverride===null?services.reduce((n,s)=>n+Number(s.price||0),0):manualPriceOverride;
   const deposit=bookingDepositForTotal(price);
-  el.innerHTML=`<b>${services.length} service${services.length===1?"":"s"} selected</b><br><small>${services.map(s=>esc(s.name)).join(" + ")}</small><br><br><b>Total: ${price===0?"Free":"£"+price}</b> · ${durationText(duration)}${deposit?` · £${deposit} deposit`:" · No deposit"}`;
+  el.innerHTML=`<b>${services.length} service${services.length===1?"":"s"} selected</b><br><small>${services.map(s=>esc(s.name)).join(" + ")}</small><br><br><b>Total: ${price===0?"Free":"£"+price}</b> · ${durationText(duration)}${deposit?` · £${deposit} deposit`:" · No deposit"}<br><button type="button" style="margin-top:10px" onclick="editManualPrice()">✏️ Edit price</button>`;
+}
+function editManualPrice(){
+  const services=manualSelectedServices();
+  const normalPrice=services.reduce((n,s)=>n+Number(s.price||0),0);
+  const currentPrice=manualPriceOverride===null?normalPrice:manualPriceOverride;
+  const answer=prompt("Enter appointment price (£)",currentPrice.toFixed(2));
+
+  if(answer===null)return;
+  if(answer.trim()===""||!Number.isFinite(Number(answer))||Number(answer)<0){
+    return toast("Enter a valid price");
+  }
+
+  manualPriceOverride=Math.round(Number(answer)*100)/100;
+  updateManualBookingSummary();
 }
 async function manualSave(){
   const services=manualSelectedServices();
@@ -913,7 +929,8 @@ async function manualSave(){
   const primary=services[0];
   const duration=services.reduce((n,s)=>n+Number(s.duration||0),0);
   const basePrice=services.reduce((n,s)=>n+Number(s.price||0),0);
-  const deposit=bookingDepositForTotal(basePrice);
+  const price=manualPriceOverride===null?basePrice:manualPriceOverride;
+const deposit=bookingDepositForTotal(price);
   const snapshots=services.map(s=>({id:s.id,name:s.name,duration:Number(s.duration||0),price:Number(s.price||0),deposit:depositFor(s),pinCurls:false}));
   let booking={
     id:uid(),
@@ -927,7 +944,7 @@ async function manualSave(){
     date:$("#md").value,
     time:$("#mt").value,
     duration,
-    price:basePrice,
+    price,
     basePrice,
     deposit,
     depositPaid:false,
