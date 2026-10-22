@@ -621,7 +621,9 @@ for(let h=6;h<24;h++){
   left:0;
   right:0;
   box-sizing:border-box;
-  border:1px solid #d8c5b7;
+  border:1px solid #c9a99a;
+border-radius:6px;
+margin:3px 5px;
   background:rgba(255,255,255,0.12);
   pointer-events:none;
   z-index:0;
