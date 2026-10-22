@@ -665,10 +665,29 @@ function renderDiary(){
    <div class="diary-scroll">
      <div class="timeline-wrap" style="height:${height}px;min-width:${laneWidth+58}px">
        <div class="time-axis">${hours}</div>
-       <div class="appointment-lane" style="width:${laneWidth}px">${blockCards}${cards||(!blockCards?'<div class="no-day-bookings">No appointments booked for this day.</div>':"")}</div>
+       <div class="appointment-lane" style="width:${laneWidth}px" onclick="diaryEmptyTimeClick(event)">${blockCards}${cards||(!blockCards?'<div class="no-day-bookings">No appointments booked for this day.</div>':"")}</div>
      </div>
    </div>
  </div>`;
+}
+function diaryEmptyTimeClick(event){
+  if(event.target.closest(".diary-appt, .diary-block-card"))return;
+
+  const lane=event.currentTarget;
+  const rect=lane.getBoundingClientRect();
+  const isPhone=window.matchMedia("(max-width: 700px)").matches;
+  const pixelsPerMinute=isPhone?1.05:0.64;
+
+  const minutesFromTop=(event.clientY-rect.top)/pixelsPerMinute;
+  const timeMinutes=Math.max(360,Math.min(1410,
+    Math.floor((360+minutesFromTop)/30)*30
+  ));
+
+  const time=ts(timeMinutes);
+
+  manual();
+ document.getElementById("md").value=window.diaryDate;
+  document.getElementById("mt").value=time;
 }
 function diaryMove(n){
  let d=new Date(window.diaryDate+"T12:00:00");
@@ -855,10 +874,71 @@ async function acknowledgeCustomerUpdate(id){
    save();adminRender();openDiaryBooking(id);toast("Customer update marked as seen");
  }catch(e){console.error(e);toast("Could not clear customer update")}
 }
+function searchManualCustomers(){
+  const search=document.getElementById("manualCustomerSearch");
+  const results=document.getElementById("manualCustomerResults");
+  if(!search||!results)return;
+
+  const query=search.value.trim().toLowerCase();
+
+  if(!query){
+    results.innerHTML="";
+    return;
+  }
+
+  const customers=new Map();
+
+  S.bookings.filter(b=>!b.customerHidden).forEach(b=>{
+    const key=`${(b.name||"").trim().toLowerCase()}|${(b.phone||"").trim()}`;
+    if(!customers.has(key)){
+      customers.set(key,{
+        name:b.name||"",
+        phone:b.phone||"",
+        email:b.email||""
+      });
+    }
+  });
+
+  const matches=[...customers.values()]
+    .filter(c=>c.name.toLowerCase().includes(query)||
+               c.phone.includes(query))
+    .slice(0,10);
+
+  results.innerHTML=matches.length
+    ? matches.map(c=>`
+      <button type="button"
+        style="display:block;width:100%;text-align:left;padding:10px;margin-top:4px"
+        onclick="selectManualCustomer('${encodeURIComponent(c.name)}','${encodeURIComponent(c.phone)}','${encodeURIComponent(c.email)}')">
+        <b>${esc(c.name)}</b><br>
+        <small>${esc(c.phone)}</small>
+      </button>
+    `).join("")
+    : `<p class="muted">No matching customers. You can enter a new customer below.</p>`;
+}
+
+function selectManualCustomer(name,phone,email){
+  document.getElementById("mn").value=decodeURIComponent(name);
+  document.getElementById("mp").value=decodeURIComponent(phone);
+  document.getElementById("me").value=decodeURIComponent(email);
+
+  document.getElementById("manualCustomerSearch").value=
+    decodeURIComponent(name);
+
+  document.getElementById("manualCustomerResults").innerHTML="";
+}
 function manual(){
    manualPriceOverride=null;
   const rows=S.services.map(s=>`<label style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.08)"><input type="checkbox" class="admin-manual-service" value="${s.id}" onchange="updateManualBookingSummary()"><span style="flex:1"><b>${esc(s.name)}</b><br><small>${durationText(s.duration)} · ${s.price===0?"Free":"£"+s.price}</small></span></label>`).join("");
-  modal(`<h2>Add booking</h2><h3>Services</h3><p class="muted" style="margin-top:0">Select one or more services for this appointment.</p><div style="max-height:330px;overflow:auto;margin-bottom:14px">${rows}</div><div id="manualBookingSummary" class="summary" style="margin-bottom:14px">Choose at least one service.</div><div class="form"><input id="mn" placeholder="Customer name"><input id="mp" placeholder="Mobile (optional)"><input id="me" type="email" placeholder="Email address"><input id="md" type="date" value="${$("#diaryDate").value}"><select id="mt">
+  modal(`<h2>Add booking</h2>
+<div style="margin-bottom:16px">
+  <input id="manualCustomerSearch"
+    placeholder="🔍 Search existing customers..."
+    oninput="searchManualCustomers()"
+    autocomplete="off"
+    style="width:100%;padding:12px;box-sizing:border-box">
+  <div id="manualCustomerResults"></div>
+</div>
+<h3>Services</h3><p class="muted" style="margin-top:0">Select one or more services for this appointment.</p><div style="max-height:330px;overflow:auto;margin-bottom:14px">${rows}</div><div id="manualBookingSummary" class="summary" style="margin-bottom:14px">Choose at least one service.</div><div class="form"><input id="mn" placeholder="Customer name"><input id="mp" placeholder="Mobile (optional)"><input id="me" type="email" placeholder="Email address"><input id="md" type="date" value="${$("#diaryDate").value}"><select id="mt">
 <option value="06:00">6:00 AM</option>
 <option value="06:30">6:30 AM</option>
 <option value="07:00">7:00 AM</option>
