@@ -357,7 +357,7 @@ header{
 .timeline-wrap{position:relative;margin-top:12px;overflow:hidden;background:#0d0d0d}
 .time-axis{position:absolute;left:0;top:0;width:78px;height:100%;border-right:1px solid #353535}
 .diary-hour{position:absolute;left:0;width:100%;border-top:1px solid #303030}.diary-hour span{position:absolute;top:-13px;left:9px;font-size:.9rem;font-weight:800;background:#0d0d0d;padding-right:6px}.diary-hour small{display:block;font-size:.64rem;text-align:right}
-.appointment-lane{position:absolute;left:78px;right:0;top:0;height:100%;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 31px,#1f1f1f 32px)}
+.appointment-lane{position:absolute;left:78px;right:0;top:0;height:100%;background-image:none;to bottom,transparent 0,transparent 31px,#1f1f1f 32px)}
 .diary-appt{position:absolute;left:8px;right:8px;width:calc(100% - 16px);border:0;border-radius:9px;padding:9px 12px;text-align:left;color:#111;overflow:hidden}.diary-appt b,.diary-appt span{display:block;line-height:1.3}.diary-appt b{font-size:.88rem}.diary-appt span{font-size:.82rem;margin-top:3px}
 .diary-tone-0{background:#79c6e2}.diary-tone-1{background:#e28bd1}.diary-tone-2{background:#b8d98c}.diary-tone-3{background:#e6bd7f}.no-day-bookings{padding:25px;color:#aaa;text-align:center}
 
