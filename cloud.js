@@ -28,7 +28,8 @@
     customerHidden:!!r.customer_hidden,
     services:Array.isArray(r.services)?r.services:[],
     customerUpdate:!!r.customer_update,
-    customerUpdateType:r.customer_update_type||""
+    customerUpdateType:r.customer_update_type||"",
+diaryColumn:r.diary_column == null ? null : Number(r.diary_column)
   });
 
   const mapBlock=r=>({
@@ -329,6 +330,17 @@ if(!customerName)throw new Error("Customer name is missing");
   if(error)throw error;
   return true;
 }
+  async function updateDiaryColumn(id, column) {
+  if (!client) throw new Error("Cloud connection unavailable");
+
+  const { error } = await client
+    .from("bookings")
+    .update({ diary_column: column })
+    .eq("id", id);
+
+  if (error) throw error;
+  return true;
+}
   async function updateAdminBooking(id,b,previous){
     if(!client)return {localOnly:true,booking:b};
     const payload={
@@ -345,7 +357,8 @@ email:b.email,
       deposit:Number(b.deposit||0),
       pin_curls:!!b.pinCurls,
       notes:b.notes||"",
-      services:Array.isArray(b.services)?b.services:[]
+      services:Array.isArray(b.services)?b.services:[],
+diary_column:b.diaryColumn == null ? null : Number(b.diaryColumn)
     };
     const {data,error}=await client
       .from("bookings")
@@ -589,6 +602,7 @@ if(nameError)throw nameError;
     deleteCustomerBookings,
     updateDepositPaid,
     updateAdminBooking,
+    updateDiaryColumn,
     adminAcknowledgeCustomerUpdate,
     updateBookingStatus,
     cancelBooking,
