@@ -612,7 +612,8 @@ const left=`calc(${item.col*25}% + 5px)`;
    const depositClass=x.customerUpdate?"customer-update":(x.status==="completed"?"status-completed":(["cancelled","no_show"].includes(x.status)?"status-closed":(!Number(x.deposit)?"deposit-none":(x.depositPaid?"deposit-paid":"deposit-due"))));
    const depositLabel=!Number(x.deposit)?"No deposit":(x.depositPaid?`\u2713 \u00A3${x.deposit} deposit paid`:`\u00A3${x.deposit} deposit due`);
    const statusLabel={confirmed:"Booked",arrived:"Arrived",completed:"Completed",no_show:"No-show",cancelled:"Cancelled"}[x.status||"confirmed"]||"Booked";
-   return `<button class="diary-appt ${depositClass}" style="top:${Math.max(0,(st-start)*ppm)}px;height:${Math.max(38,d*ppm)}px;left:${left};width:calc(25% - 10px)" onclick="openDiaryBooking('${x.id}')">
+   return `<button class="diary-appt ${depositClass}" style="top:${Math.max(0,(st-start)*ppm)}px;height:${Math.max(38,d*ppm)}px;left:${left};width:calc(25% - 10px)" onpointerdown="diaryDragStart(event, '${x.id}')"
+onclick="diaryAppointmentClick(event, '${x.id}')">
       <b>${x.time} \u2013 ${eh}:${String(em).padStart(2,"0")} \u00B7 ${esc(x.name)}</b>
       <span>${esc(x.serviceName||x.service||"Appointment")}${x.pinCurls?" \u00B7 Pin Curls":""}</span>
       <em class="appt-status status-${x.status||"confirmed"}">${statusLabel}</em>
@@ -712,6 +713,148 @@ function diaryEmptyTimeClick(event){
   manual();
  document.getElementById("md").value=window.diaryDate;
   document.getElementById("mt").value=time;
+}
+let diaryDrag = null;
+let diaryJustDragged = false;
+
+function diaryAppointmentClick(event, id) {
+  if (diaryJustDragged) {
+    event.preventDefault();
+    diaryJustDragged = false;
+    return;
+  }
+
+  openDiaryBooking(id);
+}
+function diaryDragStart(event, id) {
+  if (event.button !== 0) return;
+
+  const booking = S.bookings.find(b => String(b.id) === String(id));
+  if (!booking) return;
+
+  diaryDrag = {
+    id: id,
+    startY: event.clientY,
+    originalTime: booking.time,
+    duration: Number(booking.duration || 60),
+    element: event.currentTarget
+  };
+}
+function diaryDragMove(event) {
+  if (!diaryDrag) return;
+
+  const distance = event.clientY - diaryDrag.startY;
+
+  if (Math.abs(distance) < 6 && !diaryDrag.moved) return;
+
+  diaryDrag.moved = true;
+
+  const card = diaryDrag.element;
+  card.style.transform = `translateY(${distance}px)`;
+  card.style.zIndex = "100";
+  card.style.opacity = "0.8";
+}
+document.addEventListener("pointermove", diaryDragMove);
+function diaryDragEnd(event) {
+  if (!diaryDrag) return;
+
+  const drag = diaryDrag;
+  diaryDrag = null;
+
+  drag.element.style.transform = "";
+  drag.element.style.zIndex = "";
+  drag.element.style.opacity = "";
+
+  if (!drag.moved) return;
+diaryJustDragged = true;
+ const isPhone = window.matchMedia("(max-width: 700px)").matches;
+const ppm = isPhone ? 1.05 : 0.64;
+
+const distance = event.clientY - drag.startY;
+const originalMinutes = mins(drag.originalTime);
+
+const newMinutes = Math.max(
+  360,
+  Math.min(
+    1440 - drag.duration,
+    Math.round((originalMinutes + distance / ppm) / 15) * 15
+  )
+);
+
+const newTime = ts(newMinutes);
+ if (newTime !== drag.originalTime) {
+  const booking = S.bookings.find(
+    b => String(b.id) === String(drag.id)
+  );
+
+  if (booking) {
+    const confirmed = confirm(
+      `Move ${booking.name}'s appointment from ${drag.originalTime} to ${newTime}?`
+    );
+
+    if (confirmed) {
+      diarySaveDraggedBooking(drag.id, newTime);
+    }
+  }
+}
+  diaryJustDragged = true;
+  setTimeout(() => {
+    diaryJustDragged = false;
+  }, 300);
+}
+document.addEventListener("pointerup", diaryDragEnd);
+async function diarySaveDraggedBooking(id, newTime) {
+  const booking = S.bookings.find(
+    b => String(b.id) === String(id)
+  );
+  if (!booking) return;
+
+  const duration = Number(booking.duration || 60);
+  const date = booking.date;
+
+  const clashes = S.bookings.filter(b =>
+    String(b.id) !== String(id) &&
+    bookingBlocksTime(b) &&
+    b.date === date &&
+    overlap(newTime, duration, b.time, Number(b.duration || 60))
+  );
+
+  const blocked = S.blocks.filter(b =>
+    b.date === date &&
+    overlap(newTime, duration, b.start, mins(b.end) - mins(b.start))
+  );
+
+  const hours = S.hours[new Date(date + "T12:00").getDay()];
+  const outsideHours = !hours?.open ||
+    mins(newTime) < mins(hours.start) ||
+    mins(newTime) + duration > mins(hours.end);
+
+  if (clashes.length || blocked.length || outsideHours) {
+    if (!confirm("This time overlaps another booking, blocked time or normal working hours. Move it anyway?")) {
+      return;
+    }
+  }
+
+  try {
+    if (!window.CloudDB?.enabled() ||
+        typeof CloudDB.updateAdminBooking !== "function") {
+      throw new Error("Online saving unavailable");
+    }
+
+    await CloudDB.updateAdminBooking(id, {
+      ...booking,
+      time: newTime
+    });
+
+    await syncAdminBookings();
+    adminRender();
+    toast("Appointment moved to " + newTime);
+  } catch (error) {
+    console.error(error);
+    await syncAdminBookings();
+    adminRender();
+    toast("Could not save the new appointment time");
+  }
 }
 function diaryMove(n){
  let d=new Date(window.diaryDate+"T12:00:00");
