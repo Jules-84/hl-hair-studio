@@ -631,6 +631,7 @@ function renderDiary(){
  .diary-calendar-weekday{text-align:center;font-size:11px;color:#777;padding:7px 0}
  .diary-calendar-day{min-height:37px;border:1px solid transparent;border-radius:8px;background:#f8f5f3;color:#302626;cursor:pointer;font-size:13px}
  .diary-calendar-day.has-bookings{background:#f6dada;color:#9b2835;font-weight:700}
+ .diary-calendar-day.has-blocked{background:#e0e0e0;color:#555;font-weight:700}
  .diary-calendar-day.selected{outline:2px solid #916b82;outline-offset:-2px}
  .diary-calendar-legend{display:flex;align-items:center;gap:7px;font-size:11px;color:#666;margin-top:12px}
  .diary-calendar-legend i{width:11px;height:11px;background:#f6dada;border-radius:3px}
@@ -710,14 +711,16 @@ function renderDiaryCalendarMonth(){
  const first=new Date(y,m-1,1),days=new Date(y,m,0).getDate();
  const offset=(first.getDay()+6)%7;
  const booked=new Set(S.bookings.filter(b=>b.status!=="cancelled"&&b.status!=="no_show").map(b=>b.date));
+ const blocked=new Set((S.blocks||[]).map(b=>b.date));
  let cells=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(x=>`<span class="diary-calendar-weekday">${x}</span>`).join("");
  for(let i=0;i<offset;i++)cells+="<span></span>";
  for(let day=1;day<=days;day++){
   const date=`${diaryCalendarMonth}-${String(day).padStart(2,"0")}`;
   const has=booked.has(date);
-  cells+=`<button type="button" class="diary-calendar-day${has?" has-bookings":""}${date===window.diaryDate?" selected":""}" aria-label="${date}${has?", bookings present":""}" onclick="diaryChooseDate('${date}');document.getElementById('diaryCalendarPopup')?.remove()">${day}</button>`;
+  const isBlocked=blocked.has(date);
+  cells+=`<button type="button" class="diary-calendar-day${has?" has-bookings":isBlocked?" has-blocked":""}${date===window.diaryDate?" selected":""}" aria-label="${date}${has?", bookings present":isBlocked?", blocked time":""}" onclick="diaryChooseDate('${date}');document.getElementById('diaryCalendarPopup')?.remove()">${day}</button>`;
  }
- popup.innerHTML=`<div class="diary-calendar-head"><button type="button" onclick="event.stopPropagation();diaryCalendarShift(-1)" aria-label="Previous month">‹</button><b>${first.toLocaleDateString("en-GB",{month:"long",year:"numeric"})}</b><button type="button" onclick="event.stopPropagation();diaryCalendarShift(1)" aria-label="Next month">›</button></div><div class="diary-calendar-grid">${cells}</div><div class="diary-calendar-legend"><i></i> Red dates have appointments</div>`;
+ popup.innerHTML=`<div class="diary-calendar-head"><button type="button" onclick="event.stopPropagation();diaryCalendarShift(-1)" aria-label="Previous month">‹</button><b>${first.toLocaleDateString("en-GB",{month:"long",year:"numeric"})}</b><button type="button" onclick="event.stopPropagation();diaryCalendarShift(1)" aria-label="Next month">›</button></div><div class="diary-calendar-grid">${cells}</div><div class="diary-calendar-legend"><i></i> Red = appointments | Grey = blocked time</div>`;
 }
 document.addEventListener("click",function(e){
  const popup=document.getElementById("diaryCalendarPopup");
