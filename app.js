@@ -585,7 +585,12 @@ function renderDiary(){
    const label=h===12?"12 pm":h>12?`${h-12} pm`:`${h} am`;
    hours+=`<div class="diary-hour" style="top:${(h*60-start)*ppm}px"><span>${label}</span></div>`;
  }
-
+let hourBoxes="";
+for(let h=6;h<24;h++){
+  hourBoxes+=`<div class="diary-hour-box"
+    style="top:${(h*60-start)*ppm}px;height:${60*ppm}px">
+  </div>`;
+}
  const laid=[];
  bookings.forEach(x=>{
    let [h,m]=x.time.split(":").map(Number),st=h*60+m,d=Number(x.duration||60),en=st+d,col=0;
@@ -611,6 +616,16 @@ function renderDiary(){
  const laneWidth=isPhone?Math.max(250,maxCols*(colWidth+gap)+16):Math.max(660,maxCols*(colWidth+gap)+24);
 
  el.innerHTML=`<style>
+ .diary-hour-box{
+  position:absolute;
+  left:0;
+  right:0;
+  box-sizing:border-box;
+  border:1px solid #d8c5b7;
+  background:rgba(255,255,255,0.12);
+  pointer-events:none;
+  z-index:0;
+}
  .diary-appt.deposit-due{background:#f6dada!important;border-color:#e7b4b4!important}
  .diary-appt.deposit-paid{background:#dcefdc!important;border-color:#b7d8b7!important}
  .diary-appt.customer-update{background:#fae2c9!important;border-color:#e8bd91!important}
@@ -665,7 +680,7 @@ function renderDiary(){
    <div class="diary-scroll">
      <div class="timeline-wrap" style="height:${height}px;min-width:${laneWidth+58}px">
        <div class="time-axis">${hours}</div>
-       <div class="appointment-lane" style="width:${laneWidth}px" onclick="diaryEmptyTimeClick(event)">${blockCards}${cards||(!blockCards?'<div class="no-day-bookings">No appointments booked for this day.</div>':"")}</div>
+       <div class="appointment-lane" style="width:${laneWidth}px" onclick="diaryEmptyTimeClick(event)">${hourBoxes}${blockCards}${cards||(!blockCards?'<div class="no-day-bookings">No appointments booked for this day.</div>':"")}</div>
      </div>
    </div>
  </div>`;
@@ -680,7 +695,7 @@ function diaryEmptyTimeClick(event){
 
   const minutesFromTop=(event.clientY-rect.top)/pixelsPerMinute;
   const timeMinutes=Math.max(360,Math.min(1410,
-    Math.floor((360+minutesFromTop)/30)*30
+    Math.floor((360+minutesFromTop)/60)*60
   ));
 
   const time=ts(timeMinutes);
