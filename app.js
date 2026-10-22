@@ -733,9 +733,11 @@ document.addEventListener("click",function(e){
 });
 function openDiaryBooking(id){
  let b=S.bookings.find(x=>x.id===id);if(!b)return;
- const depositHtml=Number(b.deposit)>0
-   ? `<label class="deposit-paid-control ${b.depositPaid?"is-paid":"is-due"}"><input type="checkbox" ${b.depositPaid?"checked":""} onchange="setDepositPaid('${b.id}',this.checked)"><span><b>${b.depositPaid?"Deposit paid":"Deposit still due"}</b><small>\u00A3${b.deposit} deposit</small></span></label>`
-   : `<div class="deposit-no-payment">No deposit required</div>`;
+
+  const depositHtml = Number(b.deposit) > 0
+    ? `<label class="deposit-paid-control ${b.depositPaid ? "is-paid" : "is-due"}"><input type="checkbox" ${b.depositPaid ? "checked" : ""} onchange="setDepositPaid('${b.id}',this.checked)"> Deposit ${b.depositPaid ? "paid" : "due"}</label>`
+    : `<div class="deposit-no-payment">No deposit required</div>`;
+
  const status=b.status||"confirmed";
  const statusHtml=`<div class="appointment-status-control"><label>Appointment status<select onchange="setAppointmentStatus('${b.id}',this.value)"><option value="confirmed" ${status==="confirmed"?"selected":""}>Booked</option><option value="arrived" ${status==="arrived"?"selected":""}>Arrived</option><option value="completed" ${status==="completed"?"selected":""}>Completed</option><option value="no_show" ${status==="no_show"?"selected":""}>No-show</option><option value="cancelled" ${status==="cancelled"?"selected":""}>Cancelled</option></select></label></div>`;
  modal(`<h2>${esc(b.name)}</h2>${b.customerUpdate?`<div style="background:#fae2c9;border:1px solid #e8bd91;border-radius:12px;padding:12px;margin-bottom:12px"><b>New customer update</b><br><small>${b.customerUpdateType==="rescheduled"?"Customer rescheduled this appointment.":"Customer added or changed their notes."}</small></div>`:""}<div class="summary"><b>${esc(b.serviceName||b.service||"Appointment")}</b>${b.pinCurls?"<br>+ Pin Curls":""}<br>${nice(b.date)} at ${b.time}<br><b>Total: ${Number(b.price||0)===0?"Free":"£"+Number(b.price||0)}</b><br>${esc(b.phone||"")}${b.email?`<br>${esc(b.email)}`:""}${b.notes?`<br><br>Notes: ${esc(b.notes)}`:""}</div><button class="primary full" style="margin:14px 0" onclick="openAdminBookingEditor('${b.id}')">Edit appointment</button>${b.customerUpdate?`<button class="full" style="margin:0 0 14px" onclick="acknowledgeCustomerUpdate('${b.id}')">Mark customer update as seen</button>`:""}${statusHtml}${depositHtml}`);
