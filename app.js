@@ -1197,7 +1197,7 @@ function diaryToggleAllDay(checked){
  if(end)end.value=checked?"23:59":"13:00";
 }
 async function diarySaveBlocks(){
- const first=$("#bd").value,last=$("#bdEnd").value||first,start=$("#bs").value,end=$("#be2").value,reason=$("#br").value.trim()||"Unavailable";
+ const first=$("#bd").value,last=first,start=$("#bs").value,end=$("#be2").value,reason=$("#br").value.trim()||"Unavailable";
  if(!first||!last||last<first)return toast("Check the date range");
  if(!start||!end||mins(end)<=mins(start))return toast("Check the start and end times");
  const a=new Date(first+"T12:00"),z=new Date(last+"T12:00"),days=Math.round((z-a)/86400000);
