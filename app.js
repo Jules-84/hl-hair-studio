@@ -735,8 +735,9 @@ function openDiaryBooking(id){
  let b=S.bookings.find(x=>x.id===id);if(!b)return;
 
   const depositHtml = Number(b.deposit) > 0
-    ? `<label class="deposit-paid-control ${b.depositPaid ? "is-paid" : "is-due"}"><input type="checkbox" ${b.depositPaid ? "checked" : ""} onchange="setDepositPaid('${b.id}',this.checked)"> Deposit ${b.depositPaid ? "paid" : "due"}</label>`
-    : `<div class="deposit-no-payment">No deposit required</div>`;
+    ? '<label class="deposit-paid-control ' + (b.depositPaid ? 'is-paid' : 'is-due') + '"><input type="checkbox" ' + (b.depositPaid ? 'checked' : '') + ' onchange="setDepositPaid(\'' + b.id + '\',this.checked)"> Deposit ' + (b.depositPaid ? 'paid' : 'due') + '</label>'
+    : '<div class="deposit-no-payment">No deposit required</div>';
+
 
  const status=b.status||"confirmed";
  const statusHtml=`<div class="appointment-status-control"><label>Appointment status<select onchange="setAppointmentStatus('${b.id}',this.value)"><option value="confirmed" ${status==="confirmed"?"selected":""}>Booked</option><option value="arrived" ${status==="arrived"?"selected":""}>Arrived</option><option value="completed" ${status==="completed"?"selected":""}>Completed</option><option value="no_show" ${status==="no_show"?"selected":""}>No-show</option><option value="cancelled" ${status==="cancelled"?"selected":""}>Cancelled</option></select></label></div>`;
