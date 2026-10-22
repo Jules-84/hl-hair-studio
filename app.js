@@ -598,11 +598,14 @@ for(let h=6;h<24;h++){
 }
  const laid=[];
  bookings.forEach(x=>{
-   let [h,m]=x.time.split(":").map(Number),st=h*60+m,d=Number(x.duration||60),en=st+d,col=0;
-   while(laid.some(y=>y.col===col && st<y.end && y.start<en))col++;
+  const preferredCol = Number.isInteger(x.diaryColumn) && x.diaryColumn >= 0 && x.diaryColumn <= 3 ? x.diaryColumn : null;
+   let [h,m]=x.time.split(":").map(Number),st=h*60+m,d=Number(x.duration||60),en=st+d,col=preferredCol ?? 0;
+   if (preferredCol === null) {
+  while (col < 3 && laid.some(y => y.col === col && st < y.end && y.start < en)) col++;
+}
    laid.push({booking:x,start:st,end:en,col});
  });
- const maxCols=Math.max(1,...laid.map(x=>x.col+1));
+ const maxCols=4;
  const colWidth=isPhone?230:220,gap=8;
 const diaryBoxWidth=25;
  const cards=laid.map(item=>{
@@ -612,7 +615,7 @@ const left=`calc(${item.col*25}% + 5px)`;
    const depositClass=x.customerUpdate?"customer-update":(x.status==="completed"?"status-completed":(["cancelled","no_show"].includes(x.status)?"status-closed":(!Number(x.deposit)?"deposit-none":(x.depositPaid?"deposit-paid":"deposit-due"))));
    const depositLabel=!Number(x.deposit)?"No deposit":(x.depositPaid?`\u2713 \u00A3${x.deposit} deposit paid`:`\u00A3${x.deposit} deposit due`);
    const statusLabel={confirmed:"Booked",arrived:"Arrived",completed:"Completed",no_show:"No-show",cancelled:"Cancelled"}[x.status||"confirmed"]||"Booked";
-   return `<button class="diary-appt ${depositClass}" style="top:${Math.max(0,(st-start)*ppm)}px;height:${Math.max(38,d*ppm)}px;left:${left};width:calc(25% - 10px)" onpointerdown="diaryDragStart(event, '${x.id}')"
+   return `<button class="diary-appt ${depositClass}" style="top:${Math.max(0,(st-start)*ppm)}px;height:${Math.max(38,d*ppm)}px;left:${left};width:calc(25% - 10px)" onpointerdown="diaryDragStart(event, '${x.id}', ${item.col})"
 onclick="diaryAppointmentClick(event, '${x.id}')">
       <b>${x.time} \u2013 ${eh}:${String(em).padStart(2,"0")} \u00B7 ${esc(x.name)}</b>
       <span>${esc(x.serviceName||x.service||"Appointment")}${x.pinCurls?" \u00B7 Pin Curls":""}</span>
@@ -726,7 +729,7 @@ function diaryAppointmentClick(event, id) {
 
   openDiaryBooking(id);
 }
-function diaryDragStart(event, id) {
+function diaryDragStart(event, id, startColumn) {
   if (event.button !== 0) return;
 
   const booking = S.bookings.find(b => String(b.id) === String(id));
@@ -735,9 +738,11 @@ function diaryDragStart(event, id) {
   diaryDrag = {
     id: id,
     startY: event.clientY,
+   startX: event.clientX,
     originalTime: booking.time,
     duration: Number(booking.duration || 60),
-    element: event.currentTarget
+    element: event.currentTarget,
+startColumn: startColumn
   };
 }
 function diaryDragMove(event) {
@@ -745,12 +750,13 @@ function diaryDragMove(event) {
 
   const distance = event.clientY - diaryDrag.startY;
 
-  if (Math.abs(distance) < 6 && !diaryDrag.moved) return;
+  if (Math.abs(distance) < 6 && Math.abs(event.clientX - diaryDrag.startX) < 6 && !diaryDrag.moved) return;
 
   diaryDrag.moved = true;
 
   const card = diaryDrag.element;
-  card.style.transform = `translateY(${distance}px)`;
+  const sideways = event.clientX - diaryDrag.startX;
+card.style.transform = `translate(${sideways}px, ${distance}px)`;
   card.style.zIndex = "100";
   card.style.opacity = "0.8";
 }
@@ -766,7 +772,10 @@ function diaryDragEnd(event) {
   drag.element.style.opacity = "";
 
   if (!drag.moved) return;
-diaryJustDragged = true;
+ diaryJustDragged = true;
+ setTimeout(() => {
+  diaryJustDragged = false;
+}, 300);
  const isPhone = window.matchMedia("(max-width: 700px)").matches;
 const ppm = isPhone ? 1.05 : 0.64;
 
@@ -782,6 +791,13 @@ const newMinutes = Math.max(
 );
 
 const newTime = ts(newMinutes);
+ const movedSideways = Math.abs(event.clientX - drag.startX) > 20;
+
+
+if (movedSideways && Math.abs(event.clientX - drag.startX) > Math.abs(event.clientY - drag.startY)) {
+  diarySaveDraggedColumn(drag.id, event.clientX - drag.startX, drag.startColumn);
+  return;
+}
  if (newTime !== drag.originalTime) {
   const booking = S.bookings.find(
     b => String(b.id) === String(drag.id)
@@ -797,10 +813,7 @@ const newTime = ts(newMinutes);
     }
   }
 }
-  diaryJustDragged = true;
-  setTimeout(() => {
-    diaryJustDragged = false;
-  }, 300);
+  
 }
 document.addEventListener("pointerup", diaryDragEnd);
 async function diarySaveDraggedBooking(id, newTime) {
@@ -856,6 +869,41 @@ async function diarySaveDraggedBooking(id, newTime) {
     toast("Could not save the new appointment time");
   }
 }
+async function diarySaveDraggedColumn(id, sideways, startColumn) {
+  const booking = S.bookings.find(b => String(b.id) === String(id));
+  if (!booking) return;
+
+  const currentColumn = Number.isInteger(startColumn)
+  ? startColumn
+  : (Number.isInteger(booking.diaryColumn) ? booking.diaryColumn : 0);
+
+  const columnWidth = document.querySelector(".diary-appt")?.parentElement?.clientWidth / 4 || 220;
+const change = Math.max(-3, Math.min(3, Math.round(sideways / columnWidth)));
+  const newColumn = Math.max(0, Math.min(3, currentColumn + change));
+
+  if (newColumn === currentColumn) {
+    adminRender();
+    return;
+  }
+
+  try {
+   if (!window.CloudDB?.enabled() ||
+    typeof CloudDB.updateDiaryColumn !== "function") {
+  throw new Error("Online saving unavailable");
+}
+   await CloudDB.updateDiaryColumn(id, newColumn);
+
+    await syncAdminBookings();
+    adminRender();
+    toast("Appointment moved to column " + (newColumn + 1));
+  } catch (error) {
+    console.error(error);
+    await syncAdminBookings();
+    adminRender();
+    toast("Could not save the new diary column");
+  }
+}
+
 function diaryMove(n){
  let d=new Date(window.diaryDate+"T12:00:00");
  if(Number.isNaN(d.getTime())) d=new Date();
