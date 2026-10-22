@@ -604,13 +604,15 @@ for(let h=6;h<24;h++){
  });
  const maxCols=Math.max(1,...laid.map(x=>x.col+1));
  const colWidth=isPhone?230:220,gap=8;
+const diaryBoxWidth=25;
  const cards=laid.map(item=>{
    const x=item.booking,st=item.start,d=Number(x.duration||60),en=item.end;
-   const eh=Math.floor(en/60),em=en%60,left=8+item.col*(colWidth+gap);
+   const eh=Math.floor(en/60),em=en%60;
+const left=`calc(${item.col*25}% + 5px)`;
    const depositClass=x.customerUpdate?"customer-update":(x.status==="completed"?"status-completed":(["cancelled","no_show"].includes(x.status)?"status-closed":(!Number(x.deposit)?"deposit-none":(x.depositPaid?"deposit-paid":"deposit-due"))));
    const depositLabel=!Number(x.deposit)?"No deposit":(x.depositPaid?`\u2713 \u00A3${x.deposit} deposit paid`:`\u00A3${x.deposit} deposit due`);
    const statusLabel={confirmed:"Booked",arrived:"Arrived",completed:"Completed",no_show:"No-show",cancelled:"Cancelled"}[x.status||"confirmed"]||"Booked";
-   return `<button class="diary-appt ${depositClass}" style="top:${Math.max(0,(st-start)*ppm)}px;height:${Math.max(38,d*ppm)}px;left:${left}px;width:${colWidth}px" onclick="openDiaryBooking('${x.id}')">
+   return `<button class="diary-appt ${depositClass}" style="top:${Math.max(0,(st-start)*ppm)}px;height:${Math.max(38,d*ppm)}px;left:${left};width:calc(25% - 10px)" onclick="openDiaryBooking('${x.id}')">
       <b>${x.time} \u2013 ${eh}:${String(em).padStart(2,"0")} \u00B7 ${esc(x.name)}</b>
       <span>${esc(x.serviceName||x.service||"Appointment")}${x.pinCurls?" \u00B7 Pin Curls":""}</span>
       <em class="appt-status status-${x.status||"confirmed"}">${statusLabel}</em>
@@ -618,7 +620,7 @@ for(let h=6;h<24;h++){
    </button>`;
  }).join("");
  const blockCards=dayBlocks.map(b=>{const startM=mins(b.start),endM=mins(b.end);return `<button type="button" class="diary-block-card" style="top:${Math.max(0,(startM-start)*ppm)}px;height:${Math.max(30,(endM-startM)*ppm)}px" onclick="diaryBlockDetails('${b.id}')"><b>🔒 ${esc(b.reason||"Unavailable")}</b><small>${esc(b.start)}–${esc(b.end)}</small></button>`}).join("");
- const laneWidth=isPhone?Math.max(250,maxCols*(colWidth+gap)+16):Math.max(660,maxCols*(colWidth+gap)+24);
+ const laneWidth=isPhone?Math.max(660,maxCols*220):Math.max(660,maxCols*220);
 
  el.innerHTML=`<style>
  .diary-hour-box{
@@ -687,7 +689,7 @@ transform:scale(0.96, 0.90);
    <div class="diary-scroll">
      <div class="timeline-wrap" style="height:${height}px;min-width:${laneWidth+58}px">
        <div class="time-axis">${hours}</div>
-       <div class="appointment-lane" style="width:${laneWidth}px" onclick="diaryEmptyTimeClick(event)">${hourBoxes}${blockCards}${cards||(!blockCards?'<div class="no-day-bookings">No appointments booked for this day.</div>':"")}</div>
+      <div class="appointment-lane" style="width:100%;min-width:${laneWidth}px" onclick="diaryEmptyTimeClick(event)">${hourBoxes}${blockCards}${cards}
      </div>
    </div>
  </div>`;
